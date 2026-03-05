@@ -6,6 +6,7 @@ import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { db, auth } from '../config/firebase';
 import { collection, query, where, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
+import { writeAuditLog } from '../utils/auditLog';
 
 interface PendingOrg {
     id: string;
@@ -103,6 +104,13 @@ export const AdminReviewScreen = () => {
 
             const data = await response.json();
             if (response.ok && data.success) {
+                await writeAuditLog({
+                    action: action === 'approve' ? 'approve_organization' : 'reject_organization',
+                    performedBy: auth.currentUser!.uid,
+                    targetId: orgId,
+                    targetType: 'organization',
+                    details: action === 'reject' ? `Rejected: ${rejectReason.trim()}` : 'Approved',
+                });
                 Alert.alert('Success', `Organization ${action === 'approve' ? 'approved' : 'rejected'}`);
                 setRejectingOrgId(null);
                 setRejectReason('');

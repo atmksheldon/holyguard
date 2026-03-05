@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { logger } from '../utils/logger';
 import MapView, { Marker } from 'react-native-maps';
 import { theme } from '../theme';
 import { db } from '../config/firebase';
@@ -29,7 +30,7 @@ export const MapScreen = () => {
     const orgsQuery = query(collection(db, 'organizations'));
     
     const unsubscribe = onSnapshot(orgsQuery, (snapshot) => {
-      console.log('[MapScreen] Total organizations in database:', snapshot.docs.length);
+      logger.log('[MapScreen] Total organizations in database:', snapshot.docs.length);
       
       const allOrgs = snapshot.docs.map(doc => {
         const data = doc.data();
@@ -54,7 +55,7 @@ export const MapScreen = () => {
           !isNaN(org.longitude) &&
           (org.latitude !== 0 || org.longitude !== 0);
         
-        console.log(
+        logger.log(
           `[MapScreen] ${isValid ? '✅' : '❌'} ${org.name}:`,
           `lat=${org.latitude} (${latType}), lng=${org.longitude} (${lngType})`
         );
@@ -69,7 +70,7 @@ export const MapScreen = () => {
         (org.latitude !== 0 || org.longitude !== 0)
       );
       
-      console.log('[MapScreen] Valid organizations for map:', orgsData.length);
+      logger.log('[MapScreen] Valid organizations for map:', orgsData.length);
       
       setOrganizations(orgsData);
       

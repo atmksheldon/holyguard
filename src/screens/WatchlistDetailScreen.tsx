@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, Alert as RNAlert, Dimensions, TextInput, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { logger } from '../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -63,7 +64,7 @@ export const WatchlistDetailScreen = ({ navigation, route }: any) => {
           });
         }
       } catch (error) {
-        console.error('Error fetching watchlist entry:', error);
+        logger.error('Error fetching watchlist entry:', error);
       } finally {
         setLoading(false);
       }
@@ -97,7 +98,7 @@ export const WatchlistDetailScreen = ({ navigation, route }: any) => {
         setEditNewPhotos(prev => [...prev, result.assets[0].uri]);
       }
     } catch (error) {
-      console.error('Error adding photo:', error);
+      logger.error('Error adding photo:', error);
     }
   };
 
@@ -143,7 +144,7 @@ export const WatchlistDetailScreen = ({ navigation, route }: any) => {
 
       setEditModalVisible(false);
     } catch (error) {
-      console.error('Error updating entry:', error);
+      logger.error('Error updating entry:', error);
       RNAlert.alert('Error', 'Failed to update entry.');
     } finally {
       setIsSaving(false);

@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { logger } from '../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -83,7 +84,7 @@ export const ResourceDetailScreen: React.FC<ResourceDetailScreenProps> = ({ navi
         navigation.goBack();
       }
     } catch (error) {
-      console.error('Error loading resource:', error);
+      logger.error('Error loading resource:', error);
       Alert.alert('Error', 'Failed to load resource');
     } finally {
       setLoading(false);
@@ -106,7 +107,7 @@ export const ResourceDetailScreen: React.FC<ResourceDetailScreenProps> = ({ navi
                 { text: 'OK', onPress: () => navigation.goBack() },
               ]);
             } catch (error) {
-              console.error('Error deleting resource:', error);
+              logger.error('Error deleting resource:', error);
               Alert.alert('Error', 'Failed to delete resource');
             }
           },

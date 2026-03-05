@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, TextInput, Alert as RNAlert } from 'react-native';
+import { logger } from '../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -54,7 +55,7 @@ export const WatchlistScreen = ({ navigation }: any) => {
       setError(null);
       setLoading(false);
     }, (err) => {
-      console.error('Watchlist query error:', err);
+      logger.error('Watchlist query error:', err);
       setError('Unable to load watchlist. Please try again.');
       setLoading(false);
     });

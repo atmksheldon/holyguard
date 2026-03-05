@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { logger } from '../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -61,7 +62,7 @@ export const CreateResourceScreen: React.FC<CreateResourceScreenProps> = ({ navi
         setImageUri(result.assets[0].uri);
       }
     } catch (error) {
-      console.error('Error taking photo:', error);
+      logger.error('Error taking photo:', error);
       Alert.alert('Error', 'Failed to take photo');
     }
   };
@@ -87,7 +88,7 @@ export const CreateResourceScreen: React.FC<CreateResourceScreenProps> = ({ navi
         setImageUri(result.assets[0].uri);
       }
     } catch (error) {
-      console.error('Error choosing from library:', error);
+      logger.error('Error choosing from library:', error);
       Alert.alert('Error', 'Failed to select photo');
     }
   };
@@ -151,7 +152,7 @@ export const CreateResourceScreen: React.FC<CreateResourceScreenProps> = ({ navi
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
-      console.error('Error creating resource:', error);
+      logger.error('Error creating resource:', error);
       Alert.alert('Error', 'Failed to post resource');
     } finally {
       setUploading(false);

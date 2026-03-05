@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, ActivityIndicator, ScrollView, Modal, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, ActivityIndicator, ScrollView, Modal, KeyboardAvoidingView, Platform, Image, Animated } from 'react-native';
+import { logger } from '../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -8,6 +9,7 @@ import { auth, db } from '../config/firebase';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider, deleteUser } from 'firebase/auth';
 import { doc, deleteDoc, getDoc, updateDoc, query, collection, where, getDocs } from 'firebase/firestore';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import { GOOGLE_PLACES_API_KEY } from '../config/keys';
 
 interface SettingsScreenProps {
   navigation: any;
@@ -29,6 +31,50 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   const [currentOrg, setCurrentOrg] = useState<any>(null);
   const [loadingOrg, setLoadingOrg] = useState(false);
   const placesRef = useRef<any>(null);
+
+  // Demo mode state
+  const [showDemoModal, setShowDemoModal] = useState(false);
+  const [demoPassword, setDemoPassword] = useState('');
+  const [demoError, setDemoError] = useState('');
+  const tapCountRef = useRef(0);
+  const lastTapTimeRef = useRef(0);
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+
+  const handleTitleTap = () => {
+    const now = Date.now();
+    if (now - lastTapTimeRef.current < 500) {
+      tapCountRef.current += 1;
+    } else {
+      tapCountRef.current = 1;
+    }
+    lastTapTimeRef.current = now;
+
+    if (tapCountRef.current >= 3) {
+      tapCountRef.current = 0;
+      setShowDemoModal(true);
+      setDemoPassword('');
+      setDemoError('');
+    }
+  };
+
+  const handleDemoSubmit = () => {
+    if (demoPassword === 'HG#Platform2026!') {
+      setShowDemoModal(false);
+      setDemoPassword('');
+      setDemoError('');
+      navigation.navigate('DemoSelector');
+    } else {
+      setDemoError('Invalid code');
+      setDemoPassword('');
+      // Shake animation
+      Animated.sequence([
+        Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+      ]).start();
+    }
+  };
 
   // Load organization on mount
   useEffect(() => {
@@ -73,7 +119,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
         setOrgAddress(orgData.address || '');
       }
     } catch (error) {
-      console.error('Error loading organization:', error);
+      logger.error('Error loading organization:', error);
     }
   };
 
@@ -196,10 +242,37 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
         throw new Error('Not authenticated');
       }
 
-      // Delete Firestore user document
-      await deleteDoc(doc(db, 'users', currentUser.uid));
+      const uid = currentUser.uid;
 
-      // Delete Firebase Auth account
+      // Cascade delete: remove all user-owned data across collections
+      const collectionsToClean = [
+        { name: 'alerts', field: 'reporterId' },
+        { name: 'team_messages', field: 'senderId' },
+        { name: 'watchlist', field: 'createdBy' },
+        { name: 'resources', field: 'postedBy' },
+        { name: 'direct_messages', field: 'senderId' },
+        { name: 'invite_codes', field: 'createdBy' },
+      ];
+
+      for (const { name, field } of collectionsToClean) {
+        const q = query(collection(db, name), where(field, '==', uid));
+        const snap = await getDocs(q);
+        for (const docSnap of snap.docs) {
+          await deleteDoc(docSnap.ref);
+        }
+      }
+
+      // Delete conversations where user is a participant
+      const convsQuery = query(collection(db, 'conversations'), where('participants', 'array-contains', uid));
+      const convsSnap = await getDocs(convsQuery);
+      for (const docSnap of convsSnap.docs) {
+        await deleteDoc(docSnap.ref);
+      }
+
+      // Delete Firestore user document
+      await deleteDoc(doc(db, 'users', uid));
+
+      // Delete Firebase Auth account (must be last — after this, user loses access)
       await deleteUser(currentUser);
 
       Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
@@ -370,15 +443,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ABOUT</Text>
           <View style={styles.aboutCard}>
-            <Text style={styles.appTitle}>HolyGuard</Text>
+            <TouchableOpacity activeOpacity={1} onPress={handleTitleTap}>
+              <Text style={styles.appTitle}>HolyGuard</Text>
+            </TouchableOpacity>
             <Text style={styles.appTagline}>Security Network Application</Text>
             <Text style={styles.appVersion}>Version 1.0.0</Text>
             
             <View style={styles.sponsorSection}>
               <Text style={styles.sponsorLabel}>Sponsored By</Text>
               <View style={styles.sponsorLogosLarge}>
-                <Image source={require('../../assets/nationwide1.png')} style={styles.sponsorLogoLarge} resizeMode="contain" />
-                <Image source={require('../../assets/adt1.png')} style={styles.sponsorLogoLarge} resizeMode="contain" />
+                <Image source={require('../../assets/uscca_logo.png')} style={styles.sponsorLogoLarge} resizeMode="contain" />
               </View>
               <Text style={styles.sponsorDescription}>
                 Providing secure communication and alert systems for communities and organizations.
@@ -396,6 +470,51 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           <Text style={styles.logoutText}>LOGOUT</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Demo Access Modal */}
+      <Modal
+        visible={showDemoModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowDemoModal(false)}
+      >
+        <View style={styles.demoOverlay}>
+          <Animated.View style={[styles.demoModalBox, { transform: [{ translateX: shakeAnim }] }]}>
+            <Text style={styles.demoModalTitle}>Enter Access Code</Text>
+            <TextInput
+              style={styles.demoModalInput}
+              value={demoPassword}
+              onChangeText={(text) => {
+                setDemoPassword(text);
+                setDemoError('');
+              }}
+              placeholder="Access code"
+              placeholderTextColor="#999"
+              secureTextEntry
+              autoCapitalize="none"
+              autoFocus
+              onSubmitEditing={handleDemoSubmit}
+            />
+            {demoError !== '' && (
+              <Text style={styles.demoErrorText}>{demoError}</Text>
+            )}
+            <View style={styles.demoModalButtons}>
+              <TouchableOpacity
+                style={styles.demoCancelButton}
+                onPress={() => setShowDemoModal(false)}
+              >
+                <Text style={styles.demoCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.demoSubmitButton}
+                onPress={handleDemoSubmit}
+              >
+                <Text style={styles.demoSubmitText}>Submit</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
 
       {/* Organization Update Modal */}
       <Modal
@@ -450,7 +569,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
                   }
                 }}
                 query={{
-                  key: 'AIzaSyBFGbKCEIx7vHeC4yptmi7ax80Y0c0DkpA',
+                  key: GOOGLE_PLACES_API_KEY,
                   language: 'en',
                 }}
                 fetchDetails={true}
@@ -734,8 +853,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sponsorLogoLarge: {
-    width: 100,
-    height: 80,
+    width: 160,
+    height: 120,
   },
   sponsorDescription: {
     fontSize: 13,
@@ -849,5 +968,79 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     letterSpacing: 1,
+  },
+  // Demo modal styles
+  demoOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  demoModalBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  demoModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  demoModalInput: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 10,
+    padding: 14,
+    fontSize: 16,
+    color: '#1A1A1A',
+    borderWidth: 1,
+    borderColor: '#DDD',
+    textAlign: 'center',
+    letterSpacing: 2,
+  },
+  demoErrorText: {
+    color: '#B22222',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  demoModalButtons: {
+    flexDirection: 'row',
+    marginTop: 20,
+    gap: 12,
+  },
+  demoCancelButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 10,
+    backgroundColor: '#F0F0F0',
+    alignItems: 'center',
+  },
+  demoCancelText: {
+    color: '#666',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  demoSubmitButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 10,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+  },
+  demoSubmitText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
 });

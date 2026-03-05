@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { logger } from '../utils/logger';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { auth, db } from '../config/firebase';
@@ -7,6 +8,7 @@ import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/
 import { doc, setDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
 import { validateEmail, validatePassword } from '../utils/validation';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import { GOOGLE_PLACES_API_KEY } from '../config/keys';
 
 const formatEIN = (text: string) => {
     const digits = text.replace(/\D/g, '').slice(0, 9);
@@ -269,7 +271,7 @@ export const SignUpScreen = ({ navigation }: any) => {
                 const verifyResult = await verifyResponse.json();
                 setVerificationResults(verifyResult);
             } catch (verifyError) {
-                console.error('Verification call failed:', verifyError);
+                logger.error('Verification call failed:', verifyError);
                 setVerificationResults({
                     status: 'pending',
                     score: 0,
@@ -465,7 +467,7 @@ export const SignUpScreen = ({ navigation }: any) => {
                             }
                         }}
                         query={{
-                            key: 'AIzaSyBFGbKCEIx7vHeC4yptmi7ax80Y0c0DkpA',
+                            key: GOOGLE_PLACES_API_KEY,
                             language: 'en',
                         }}
                         fetchDetails={true}

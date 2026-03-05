@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { logger } from '../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -95,7 +96,7 @@ export const ChannelManagementScreen: React.FC<ChannelManagementScreenProps> = (
       Alert.alert('Success', `Channel #${channelName} created!`);
     } catch (error: any) {
       Alert.alert('Error', 'Failed to create channel. Please try again.');
-      console.error('Error creating channel:', error);
+      logger.error('Error creating channel:', error);
     } finally {
       setCreating(false);
     }
@@ -129,7 +130,7 @@ export const ChannelManagementScreen: React.FC<ChannelManagementScreenProps> = (
               }
             } catch (error) {
               Alert.alert('Error', 'Failed to delete channel.');
-              console.error('Error deleting channel:', error);
+              logger.error('Error deleting channel:', error);
             }
           }
         }

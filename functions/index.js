@@ -291,7 +291,9 @@ exports.getUserProfile = functions.https.onRequest(async (req, res) => {
 // ORGANIZATION VERIFICATION FUNCTIONS
 // =============================================
 
-const GOOGLE_PLACES_API_KEY = 'AIzaSyBFGbKCEIx7vHeC4yptmi7ax80Y0c0DkpA';
+// Read from environment variable. Set via functions/.env file (Firebase Functions v2 loads it automatically)
+// or via: firebase functions:config:set google.places_api_key="YOUR_KEY"
+const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY || '';
 const AUTO_APPROVE_THRESHOLD = 60;
 
 const FREE_EMAIL_DOMAINS = [

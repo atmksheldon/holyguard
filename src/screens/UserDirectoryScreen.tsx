@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { logger } from '../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -71,7 +72,7 @@ export const UserDirectoryScreen: React.FC<UserDirectoryScreenProps> = ({ naviga
               organizationName = orgDoc.data().name || '';
             }
           } catch (error) {
-            console.error('Error loading org:', error);
+            logger.error('Error loading org:', error);
           }
         }
 
@@ -93,7 +94,7 @@ export const UserDirectoryScreen: React.FC<UserDirectoryScreenProps> = ({ naviga
 
       setLoading(false);
     } catch (error) {
-      console.error('Error loading users:', error);
+      logger.error('Error loading users:', error);
       setLoading(false);
     }
   };
@@ -163,7 +164,7 @@ export const UserDirectoryScreen: React.FC<UserDirectoryScreenProps> = ({ naviga
 
       setUserStatuses(statusMap);
     } catch (error) {
-      console.error('Error loading user statuses:', error);
+      logger.error('Error loading user statuses:', error);
     }
   };
 
@@ -203,7 +204,7 @@ export const UserDirectoryScreen: React.FC<UserDirectoryScreenProps> = ({ naviga
       // Reload statuses
       await loadUserStatuses(users);
     } catch (error) {
-      console.error('Error sending invite:', error);
+      logger.error('Error sending invite:', error);
       Alert.alert('Error', 'Failed to send invite');
     }
   };

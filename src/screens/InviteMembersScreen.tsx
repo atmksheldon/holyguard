@@ -9,6 +9,7 @@ import {
     FlatList,
     Share,
 } from 'react-native';
+import { logger } from '../utils/logger';
 import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { getAuth } from 'firebase/auth';
@@ -111,7 +112,7 @@ export default function InviteMembersScreen() {
                 message: `Join our security network on HolyGuard!\n\nInvite Code: ${code}\n\nDownload HolyGuard and use this code to join our organization.`,
             });
         } catch (error) {
-            console.error('Error sharing code:', error);
+            logger.error('Error sharing code:', error);
         }
     };
 

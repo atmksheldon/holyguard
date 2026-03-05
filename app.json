@@ -39,6 +39,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
+      "_note_apiKeys": "Google Maps API keys in ios.config and android.config are required by Expo for native Maps SDK. Restrict these keys in Google Cloud Console to your app bundle ID.",
       "eas": {
         "projectId": "76276ecb-b99b-4804-a997-8d28e27e7e25"
       }

@@ -1,16 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, Alert, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, Alert, TextInput, Linking, Platform } from 'react-native';
+import { logger } from '../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../config/firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { GOOGLE_PLACES_API_KEY } from '../config/keys';
+import { haversineDistanceMiles } from '../utils/geo';
 
 import { RESOURCE_CATEGORIES_WITH_ALL, RESOURCE_CATEGORY_COLORS } from '../constants/categories';
 
 const CATEGORIES = RESOURCE_CATEGORIES_WITH_ALL;
 const CATEGORY_COLORS = RESOURCE_CATEGORY_COLORS;
+
+const USCCA_TRAINING_URL = 'https://www.usconcealedcarry.com/firearms-training/range-retailer/texas-partners/uscca/event-allen-tx-should-i-shoot-25cbc/';
 
 interface Resource {
   id: string;
@@ -25,6 +31,17 @@ interface Resource {
   timestamp: Date;
 }
 
+interface NearbyPlace {
+  place_id: string;
+  name: string;
+  vicinity: string;
+  rating?: number;
+  user_ratings_total?: number;
+  opening_hours?: { open_now: boolean };
+  geometry: { location: { lat: number; lng: number } };
+  distanceMiles: number;
+}
+
 interface ResourcesScreenProps {
   navigation: any;
 }
@@ -35,6 +52,9 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({ navigation }) 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(true);
+  const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
+  const [placesLoading, setPlacesLoading] = useState(true);
+  const [placesError, setPlacesError] = useState<string | null>(null);
 
   useEffect(() => {
     const resourcesQuery = query(
@@ -61,12 +81,74 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({ navigation }) 
       setResources(resourcesData);
       setLoading(false);
     }, (error) => {
-      console.error('Error loading resources:', error);
+      logger.error('Error loading resources:', error);
       Alert.alert('Error', 'Failed to load resources');
       setLoading(false);
     });
 
     return () => unsubscribe();
+  }, []);
+
+  // Fetch nearby firearms training locations
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          if (!cancelled) {
+            setPlacesError('Location permission needed to find nearby training');
+            setPlacesLoading(false);
+          }
+          return;
+        }
+
+        const position = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        const { latitude, longitude } = position.coords;
+
+        const url =
+          `https://maps.googleapis.com/maps/api/place/nearbysearch/json` +
+          `?location=${latitude},${longitude}` +
+          `&radius=40000` +
+          `&keyword=${encodeURIComponent('firearms training')}` +
+          `&key=${GOOGLE_PLACES_API_KEY}`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (cancelled) return;
+
+        if (data.status === 'OK' && data.results?.length > 0) {
+          const places: NearbyPlace[] = data.results.map((place: any) => ({
+            ...place,
+            distanceMiles: haversineDistanceMiles(
+              latitude,
+              longitude,
+              place.geometry.location.lat,
+              place.geometry.location.lng
+            ),
+          }));
+          places.sort((a, b) => a.distanceMiles - b.distanceMiles);
+          setNearbyPlaces(places);
+        } else if (data.status === 'ZERO_RESULTS') {
+          setPlacesError('No training locations found nearby');
+        } else {
+          setPlacesError('Unable to load nearby training locations');
+        }
+      } catch (err) {
+        if (!cancelled) {
+          logger.error('Error fetching nearby places:', err);
+          setPlacesError('Unable to load nearby training locations');
+        }
+      } finally {
+        if (!cancelled) setPlacesLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, []);
 
   const filteredResources = useMemo(() => {
@@ -169,6 +251,108 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({ navigation }) 
     </TouchableOpacity>
   );
 
+  const openDirections = (place: NearbyPlace) => {
+    const { lat, lng } = place.geometry.location;
+    const label = encodeURIComponent(place.name);
+    const url = Platform.select({
+      ios: `maps://app?daddr=${lat},${lng}&q=${label}`,
+      default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${place.place_id}`,
+    })!;
+    Linking.openURL(url);
+  };
+
+  const renderNearbyPlace = (place: NearbyPlace) => (
+    <TouchableOpacity
+      key={place.place_id}
+      style={styles.nearbyCard}
+      onPress={() => openDirections(place)}
+      activeOpacity={0.8}
+    >
+      <View style={styles.nearbyHeader}>
+        <Text style={styles.nearbyName} numberOfLines={1}>{place.name}</Text>
+        <View style={styles.distanceBadge}>
+          <MaterialCommunityIcons name="map-marker-distance" size={12} color="#fff" />
+          <Text style={styles.distanceText}>{place.distanceMiles.toFixed(1)} mi</Text>
+        </View>
+      </View>
+      <Text style={styles.nearbyAddress} numberOfLines={1}>{place.vicinity}</Text>
+      <View style={styles.nearbyFooter}>
+        {place.rating != null && (
+          <View style={styles.ratingContainer}>
+            <MaterialCommunityIcons name="star" size={14} color="#F59E0B" />
+            <Text style={styles.ratingText}>
+              {place.rating.toFixed(1)}
+              {place.user_ratings_total != null && (
+                <Text style={styles.ratingCount}> ({place.user_ratings_total})</Text>
+              )}
+            </Text>
+          </View>
+        )}
+        {place.opening_hours != null && (
+          <Text style={[styles.openStatus, { color: place.opening_hours.open_now ? theme.colors.success : theme.colors.error }]}>
+            {place.opening_hours.open_now ? 'Open Now' : 'Closed'}
+          </Text>
+        )}
+        <View style={styles.directionsLink}>
+          <MaterialCommunityIcons name="directions" size={14} color={theme.colors.primary} />
+          <Text style={styles.directionsText}>Directions</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderNearbyTrainingSection = () => (
+    <View style={styles.nearbySection}>
+      <View style={styles.nearbySectionHeader}>
+        <MaterialCommunityIcons name="crosshairs-gps" size={20} color={theme.colors.primary} />
+        <Text style={styles.nearbySectionTitle}>Training Near You</Text>
+      </View>
+      {placesLoading ? (
+        <View style={styles.nearbyLoading}>
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <Text style={styles.nearbyLoadingText}>Finding nearby training locations...</Text>
+        </View>
+      ) : placesError ? (
+        <View style={styles.nearbyError}>
+          <MaterialCommunityIcons name="map-marker-off" size={24} color={theme.colors.textSecondary} />
+          <Text style={styles.nearbyErrorText}>{placesError}</Text>
+        </View>
+      ) : (
+        nearbyPlaces.map(renderNearbyPlace)
+      )}
+    </View>
+  );
+
+  const renderListHeader = () => (
+    <>
+      {renderTrainingCard()}
+      {renderNearbyTrainingSection()}
+    </>
+  );
+
+  const renderTrainingCard = () => (
+    <TouchableOpacity
+      style={styles.trainingCard}
+      onPress={() => Linking.openURL(USCCA_TRAINING_URL)}
+      activeOpacity={0.8}
+    >
+      <View style={styles.trainingBadge}>
+        <MaterialCommunityIcons name="star" size={14} color="#fff" />
+        <Text style={styles.trainingBadgeText}>SPONSORED</Text>
+      </View>
+      <Image source={require('../../assets/uscca_logo.png')} style={styles.trainingLogo} resizeMode="contain" />
+      <Text style={styles.trainingTitle}>Should I Shoot?</Text>
+      <Text style={styles.trainingSubtitle}>USCCA Firearms Training Event - Allen, TX</Text>
+      <Text style={styles.trainingDescription}>
+        Join USCCA for an interactive training session covering real-world self-defense scenarios and decision-making.
+      </Text>
+      <View style={styles.trainingButton}>
+        <Text style={styles.trainingButtonText}>View Event Details</Text>
+        <MaterialCommunityIcons name="open-in-new" size={16} color="#fff" />
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -176,7 +360,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({ navigation }) 
           <MaterialCommunityIcons name="book-open-variant" size={28} color={theme.colors.primary} />
           <Text style={styles.headerTitle}>Collaboration Information Hub</Text>
         </View>
-        <Text style={styles.sponsorTag}>Your Logo Here</Text>
+        <Image source={require('../../assets/uscca_logo.png')} style={styles.sponsorLogo} resizeMode="contain" />
       </View>
 
       {/* Search Bar */}
@@ -203,22 +387,32 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({ navigation }) 
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       ) : filteredResources.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <MaterialCommunityIcons name="book-open-variant" size={64} color={theme.colors.textSecondary} />
-          <Text style={styles.emptyText}>No resources yet</Text>
-          <Text style={styles.emptySubtext}>
-            {searchText
-              ? 'Try a different search term'
-              : selectedCategory === 'All'
-                ? 'Be the first to share a resource!'
-                : `No resources in ${selectedCategory}`}
-          </Text>
-        </View>
+        <FlatList
+          data={[]}
+          keyExtractor={() => 'empty'}
+          renderItem={() => null}
+          ListHeaderComponent={renderListHeader}
+          ListFooterComponent={
+            <View style={styles.emptyContainer}>
+              <MaterialCommunityIcons name="book-open-variant" size={64} color={theme.colors.textSecondary} />
+              <Text style={styles.emptyText}>No resources yet</Text>
+              <Text style={styles.emptySubtext}>
+                {searchText
+                  ? 'Try a different search term'
+                  : selectedCategory === 'All'
+                    ? 'Be the first to share a resource!'
+                    : `No resources in ${selectedCategory}`}
+              </Text>
+            </View>
+          }
+          contentContainerStyle={styles.listContent}
+        />
       ) : (
         <FlatList
           data={filteredResources}
           keyExtractor={(item) => item.id}
           renderItem={renderResource}
+          ListHeaderComponent={renderListHeader}
           contentContainerStyle={styles.listContent}
         />
       )}
@@ -259,10 +453,9 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     flex: 1,
   },
-  sponsorTag: {
-    fontSize: 9,
-    color: theme.colors.gray,
-    opacity: 0.6,
+  sponsorLogo: {
+    width: 60,
+    height: 30,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -405,6 +598,71 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     flex: 1,
   },
+  trainingCard: {
+    backgroundColor: '#1a1a2e',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2a435',
+  },
+  trainingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e2a435',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+  trainingBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff',
+    marginLeft: 4,
+  },
+  trainingLogo: {
+    width: 120,
+    height: 50,
+    marginBottom: 12,
+  },
+  trainingTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  trainingSubtitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#e2a435',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  trainingDescription: {
+    fontSize: 13,
+    color: '#ccc',
+    lineHeight: 18,
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  trainingButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e2a435',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  trainingButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+    marginRight: 6,
+  },
   fab: {
     position: 'absolute',
     right: 16,
@@ -420,5 +678,123 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
+  },
+  // Nearby training section
+  nearbySection: {
+    marginBottom: 16,
+  },
+  nearbySectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  nearbySectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+    marginLeft: 8,
+  },
+  nearbyLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 12,
+  },
+  nearbyLoadingText: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    marginLeft: 10,
+  },
+  nearbyError: {
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 12,
+  },
+  nearbyErrorText: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  nearbyCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  nearbyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  nearbyName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: theme.colors.textPrimary,
+    flex: 1,
+    marginRight: 8,
+  },
+  distanceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  distanceText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#fff',
+    marginLeft: 3,
+  },
+  nearbyAddress: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    marginBottom: 8,
+  },
+  nearbyFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  ratingText: {
+    fontSize: 12,
+    color: theme.colors.textPrimary,
+    marginLeft: 3,
+    fontWeight: '500',
+  },
+  ratingCount: {
+    fontWeight: '400',
+    color: theme.colors.textSecondary,
+  },
+  openStatus: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginRight: 12,
+  },
+  directionsLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 'auto',
+  },
+  directionsText: {
+    fontSize: 12,
+    color: theme.colors.primary,
+    fontWeight: '600',
+    marginLeft: 3,
   },
 });

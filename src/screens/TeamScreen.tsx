@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, FlatList, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard } from 'react-native';
+import { logger } from '../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -51,12 +52,12 @@ export const TeamScreen = ({ navigation, route }: any) => {
   }, [user?.organizationId, currentChannel]);
 
   const loadDefaultChannel = async () => {
-    console.log('[TeamScreen] Loading default channel...');
-    console.log('[TeamScreen] User organizationId:', user?.organizationId);
-    console.log('[TeamScreen] User data:', user);
+    logger.log('[TeamScreen] Loading default channel...');
+    logger.log('[TeamScreen] User organizationId:', user?.organizationId);
+    logger.log('[TeamScreen] User data:', user);
     
     if (!user?.organizationId) {
-      console.log('[TeamScreen] No organizationId found!');
+      logger.log('[TeamScreen] No organizationId found!');
       setLoadingChannel(false);
       return;
     }
@@ -69,14 +70,14 @@ export const TeamScreen = ({ navigation, route }: any) => {
         limit(1)
       );
       
-      console.log('[TeamScreen] Executing query...');
+      logger.log('[TeamScreen] Executing query...');
       const snapshot = await getDocs(channelsQuery);
-      console.log('[TeamScreen] Query returned', snapshot.size, 'channels');
+      logger.log('[TeamScreen] Query returned', snapshot.size, 'channels');
       
       if (!snapshot.empty) {
         const channelDoc = snapshot.docs[0];
         const data = channelDoc.data();
-        console.log('[TeamScreen] Found channel:', data.name);
+        logger.log('[TeamScreen] Found channel:', data.name);
         setCurrentChannel({
           id: channelDoc.id,
           name: data.name,
@@ -84,12 +85,12 @@ export const TeamScreen = ({ navigation, route }: any) => {
           isDefault: data.isDefault || false,
         });
       } else {
-        console.log('[TeamScreen] No channels found');
+        logger.log('[TeamScreen] No channels found');
       }
     } catch (error) {
-      console.error('[TeamScreen] Error loading default channel:', error);
+      logger.error('[TeamScreen] Error loading default channel:', error);
     } finally {
-      console.log('[TeamScreen] Setting loadingChannel to false');
+      logger.log('[TeamScreen] Setting loadingChannel to false');
       setLoadingChannel(false);
     }
   };
@@ -113,7 +114,7 @@ export const TeamScreen = ({ navigation, route }: any) => {
         });
       }
     } catch (error) {
-      console.error('Error loading channel:', error);
+      logger.error('Error loading channel:', error);
     }
   };
 
@@ -147,7 +148,7 @@ export const TeamScreen = ({ navigation, route }: any) => {
         setMessages(messagesData);
       },
       (error) => {
-        console.error('[TeamScreen] Error listening to messages:', error);
+        logger.error('[TeamScreen] Error listening to messages:', error);
         if (error.message.includes('index')) {
           Alert.alert(
             'Setup Required',
@@ -179,7 +180,7 @@ export const TeamScreen = ({ navigation, route }: any) => {
       // Auto-scroll to bottom
       setTimeout(() => flatListRef.current?.scrollToEnd(), 100);
     } catch (error: any) {
-      console.error('[TeamScreen] Error sending message:', error);
+      logger.error('[TeamScreen] Error sending message:', error);
       Alert.alert('Error', error.message || 'Unable to send message. Please try again.');
     } finally {
       setSending(false);

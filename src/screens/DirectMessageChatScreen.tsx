@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, KeyboardAvoidingView, Platform, Image, ActivityIndicator, Alert } from 'react-native';
+import { logger } from '../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -59,7 +60,7 @@ export const DirectMessageChatScreen: React.FC<DirectMessageChatScreenProps> = (
       messagesData.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
       setMessages(messagesData);
     }, (error) => {
-      console.error('Error loading messages:', error);
+      logger.error('Error loading messages:', error);
     });
 
     return () => unsubscribe();
@@ -74,13 +75,13 @@ export const DirectMessageChatScreen: React.FC<DirectMessageChatScreenProps> = (
       return;
     }
 
-    console.log('[DM] Sending message:', { text, conversationId, userId: user.id });
+    logger.log('[DM] Sending message:', { text, conversationId, userId: user.id });
     setSending(true);
     setMessageText('');
 
     try {
       // Add message
-      console.log('[DM] Adding message to Firestore...');
+      logger.log('[DM] Adding message to Firestore...');
       await addDoc(collection(db, 'direct_messages'), {
         conversationId,
         senderId: user.id,
@@ -90,10 +91,10 @@ export const DirectMessageChatScreen: React.FC<DirectMessageChatScreenProps> = (
         timestamp: serverTimestamp(),
       });
 
-      console.log('[DM] Message added successfully');
+      logger.log('[DM] Message added successfully');
       
       // Update conversation
-      console.log('[DM] Updating conversation...');
+      logger.log('[DM] Updating conversation...');
       await updateDoc(doc(db, 'conversations', conversationId), {
         lastMessage: text,
         lastMessageTimestamp: serverTimestamp(),
@@ -101,14 +102,14 @@ export const DirectMessageChatScreen: React.FC<DirectMessageChatScreenProps> = (
         updatedAt: serverTimestamp(),
       });
       
-      console.log('[DM] Conversation updated successfully');
+      logger.log('[DM] Conversation updated successfully');
 
       // Scroll to bottom
       setTimeout(() => {
         flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
       }, 100);
     } catch (error) {
-      console.error('Error sending message:', error);
+      logger.error('Error sending message:', error);
       setMessageText(text); // Restore message on error
       alert('Failed to send message. Please try again.');
     } finally {
@@ -170,7 +171,7 @@ export const DirectMessageChatScreen: React.FC<DirectMessageChatScreenProps> = (
         await uploadImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.error('Error picking image:', error);
+      logger.error('Error picking image:', error);
       alert('Failed to select image. Please try again.');
     }
   };
@@ -217,7 +218,7 @@ export const DirectMessageChatScreen: React.FC<DirectMessageChatScreenProps> = (
         flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
       }, 100);
     } catch (error) {
-      console.error('Error uploading image:', error);
+      logger.error('Error uploading image:', error);
       alert('Failed to send photo. Please try again.');
     } finally {
       setUploadingImage(false);

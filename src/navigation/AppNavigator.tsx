@@ -19,6 +19,9 @@ import { WatchlistScreen } from '../screens/WatchlistScreen';
 import { CreateWatchlistEntryScreen } from '../screens/CreateWatchlistEntryScreen';
 import { WatchlistDetailScreen } from '../screens/WatchlistDetailScreen';
 import { AdminReviewScreen } from '../screens/AdminReviewScreen';
+import { DemoSelectorScreen } from '../screens/DemoSelectorScreen';
+import { DemoSchoolGuardScreen } from '../screens/DemoSchoolGuardScreen';
+import { DemoCompanyGuardScreen } from '../screens/DemoCompanyGuardScreen';
 import { useAuth } from '../context/AuthContext';
 import { theme } from '../theme';
 
@@ -51,6 +54,9 @@ const DashboardNavigator = () => {
     <DashboardStack.Navigator screenOptions={{ headerShown: false }}>
       <DashboardStack.Screen name="DashboardMain" component={DashboardScreen} />
       <DashboardStack.Screen name="Settings" component={SettingsScreen} />
+      <DashboardStack.Screen name="DemoSelector" component={DemoSelectorScreen} />
+      <DashboardStack.Screen name="DemoSchoolGuard" component={DemoSchoolGuardScreen} />
+      <DashboardStack.Screen name="DemoCompanyGuard" component={DemoCompanyGuardScreen} />
       <DashboardStack.Screen name="CreateWatchlistEntry" component={CreateWatchlistEntryScreen} />
     </DashboardStack.Navigator>
   );

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
+import { logger } from '../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -75,7 +76,7 @@ export const DirectMessagesScreen: React.FC<DirectMessagesScreenProps> = ({ navi
       setConversations(conversationsData);
       setLoading(false);
     }, (error) => {
-      console.error('Error loading conversations:', error);
+      logger.error('Error loading conversations:', error);
       setLoading(false);
     });
 
@@ -183,7 +184,7 @@ export const DirectMessagesScreen: React.FC<DirectMessagesScreenProps> = ({ navi
       Alert.alert('Success', `You can now message ${invite.fromUserDetails.name}`);
       setActiveTab('messages');
     } catch (error) {
-      console.error('Error accepting invite:', error);
+      logger.error('Error accepting invite:', error);
       Alert.alert('Error', 'Failed to accept invite');
     }
   };
@@ -204,7 +205,7 @@ export const DirectMessagesScreen: React.FC<DirectMessagesScreenProps> = ({ navi
                 updatedAt: serverTimestamp(),
               });
             } catch (error) {
-              console.error('Error declining invite:', error);
+              logger.error('Error declining invite:', error);
               Alert.alert('Error', 'Failed to decline invite');
             }
           },

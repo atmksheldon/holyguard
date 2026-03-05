@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cowboy State LLC — Brand Mark Sheet</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Sans+3:wght@300;400;600;700&family=Anton&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --heritage-red: #931314;
+    --heritage-red-glow: rgba(147, 19, 20, 0.3);
+    --balboa-mist: #DAD5CC;
+    --flint: #565C5E;
+    --flint-dark: #3E4345;
+    --near-black: #1C1F21;
+    --deep-black: #141617;
+    --white: #FFFFFF;
+    --off-white: #FAF9F7;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    background: var(--near-black);
+    color: var(--balboa-mist);
+    line-height: 1.6;
+  }
+
+  /* ---- HERO ---- */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 50% 40%, rgba(147,19,20,0.08) 0%, transparent 60%),
+                var(--deep-black);
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: repeating-conic-gradient(transparent 0deg, rgba(147,19,20,0.015) 1deg, transparent 2deg);
+    animation: slowSpin 120s linear infinite;
+  }
+  @keyframes slowSpin {
+    to { transform: rotate(360deg); }
+  }
+  .hero-brand {
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    animation: heroFade 1.2s ease-out;
+  }
+  @keyframes heroFade {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .hero-letters {
+    font-family: Impact, 'Anton', sans-serif;
+    font-size: clamp(120px, 18vw, 200px);
+    color: var(--heritage-red);
+    line-height: 1;
+    letter-spacing: 16px;
+    text-shadow: 0 0 60px rgba(147,19,20,0.3), 0 0 120px rgba(147,19,20,0.1);
+  }
+  .hero-rocker {
+    margin-top: 8px;
+  }
+  .hero-wordmark {
+    font-family: Impact, 'Anton', sans-serif;
+    font-size: clamp(18px, 3vw, 28px);
+    color: var(--balboa-mist);
+    letter-spacing: 14px;
+    text-transform: uppercase;
+    margin-top: 32px;
+    opacity: 0.7;
+  }
+  .hero-sub {
+    font-size: 0.82rem;
+    color: var(--flint);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+  .scroll-hint {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--flint);
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+  }
+
+  /* ---- SECTIONS ---- */
+  .section {
+    padding: 80px 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .section-header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .section-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--heritage-red);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .section-header p {
+    color: var(--flint);
+    font-size: 0.9rem;
+  }
+
+  .divider {
+    width: 60px;
+    height: 2px;
+    background: var(--heritage-red);
+    margin: 0 auto 80px;
+    opacity: 0.5;
+  }
+
+  /* ---- PRIMARY LOCKUPS ---- */
+  .lockups {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-bottom: 32px;
+  }
+  .lockup-card {
+    border: 1px solid rgba(218,213,204,0.1);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .lockup-card:hover {
+    border-color: var(--heritage-red);
+  }
+  .lockup-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 56px 24px 48px;
+    min-height: 280px;
+    position: relative;
+  }
+  .lockup-display.bg-dark {
+    background: var(--deep-black);
+  }
+  .lockup-display.bg-flint {
+    background: var(--flint-dark);
+  }
+  .lockup-display.bg-mist {
+    background: var(--balboa-mist);
+  }
+  .lockup-display.bg-white {
+    background: var(--white);
+  }
+
+  .lockup-label {
+    padding: 16px 20px;
+    background: rgba(255,255,255,0.03);
+    border-top: 1px solid rgba(218,213,204,0.08);
+  }
+  .lockup-label h3 {
+    font-size: 0.85rem;
+    color: var(--white);
+    margin-bottom: 2px;
+  }
+  .lockup-label span {
+    font-size: 0.75rem;
+    color: var(--flint);
+  }
+
+  .brand-mark {
+    text-align: center;
+  }
+  .brand-mark .letters {
+    font-family: Impact, 'Anton', sans-serif;
+    line-height: 1;
+  }
+  .brand-mark .wordmark {
+    font-family: Impact, 'Anton', sans-serif;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    margin-top: 20px;
+  }
+  .brand-mark .llc {
+    font-family: 'Source Sans 3', sans-serif;
+    font-weight: 300;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* ---- APPLICATIONS ---- */
+  .app-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .app-card {
+    border: 1px solid rgba(218,213,204,0.1);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: transform 0.3s, border-color 0.3s;
+  }
+  .app-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--heritage-red);
+  }
+  .app-card.wide {
+    grid-column: span 2;
+  }
+  .app-card.tall {
+    grid-row: span 2;
+  }
+
+  .app-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    min-height: 160px;
+    position: relative;
+  }
+  .app-label {
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.03);
+    border-top: 1px solid rgba(218,213,204,0.08);
+  }
+  .app-label h4 {
+    font-size: 0.82rem;
+    color: var(--balboa-mist);
+    margin-bottom: 2px;
+  }
+  .app-label span {
+    font-size: 0.72rem;
+    color: var(--flint);
+  }
+
+  /* Favicon mock */
+  .favicon-mock {
+    width: 48px;
+    height: 48px;
+    background: var(--heritage-red);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .favicon-mock .f-letters {
+    font-family: Impact, 'Anton', sans-serif;
+    font-size: 22px;
+    color: white;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  /* Nav bar mock */
+  .nav-mock {
+    width: 100%;
+    background: var(--deep-black);
+    border: 1px solid rgba(218,213,204,0.08);
+    border-radius: 8px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-mock .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .nav-mock .nav-brand-icon {
+    font-family: Impact, 'Anton', sans-serif;
+    font-size: 20px;
+    color: var(--heritage-red);
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+  .nav-mock .nav-brand-text {
+    font-family: Impact, 'Anton', sans-serif;
+    font-size: 11px;
+    color: var(--balboa-mist);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+  .nav-mock .nav-links {
+    display: flex;
+    gap: 16px;
+  }
+  .nav-mock .nav-links span {
+    font-size: 0.72rem;
+    color: var(--flint);
+    letter-spacing: 1px;
+  }
+
+  /* Business card mock */
+  .bcard {
+    width: 100%;
+    max-width: 300px;
+    aspect-ratio: 3.5/2;
+    background: var(--deep-black);
+    border-radius: 8px;
+    border: 1px solid rgba(218,213,204,0.1);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .bcard-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+  .bcard-brand .bc-letters {
+    font-family: Impact, 'Anton', sans-serif;
+    font-size: 28px;
+    color: var(--white);
+    letter-spacing: 4px;
+    line-height: 1;
+  }
+  .bcard-bottom {
+    text-align: right;
+  }
+  .bcard-bottom .name {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.72rem;
+    color: var(--balboa-mist);
+    letter-spacing: 2px;
+  }
+  .bcard-bottom .title {
+    font-size: 0.62rem;
+    color: var(--flint);
+    letter-spacing: 1px;
+  }
+
+  /* Watermark */
+  .watermark-mock {
+    width: 100%;
+    background: var(--white);
+    border-radius: 8px;
+    padding: 28px;
+    position: relative;
+    min-height: 120px;
+  }
+  .watermark-mock .wm-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .watermark-mock .wm-line {
+    height: 6px;
+    background: #E8E6E2;
+    border-radius: 3px;
+  }
+  .watermark-mock .wm-line:nth-child(2) { width: 85%; }
+  .watermark-mock .wm-line:nth-child(3) { width: 70%; }
+  .watermark-mock .wm-line:nth-child(4) { width: 90%; }
+  .watermark-mock .wm-stamp {
+    position: absolute;
+    bottom: 14px;
+    right: 18px;
+    font-family: Impact, 'Anton', sans-serif;
+    font-size: 18px;
+    color: rgba(147,19,20,0.12);
+    letter-spacing: 3px;
+    line-height: 1;
+  }
+
+  /* Stamp / emboss effect */
+  .stamp-mock {
+    text-align: center;
+  }
+  .stamp-circle {
+    width: 120px;
+    height: 120px;
+    border: 3px solid var(--heritage-red);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    position: relative;
+  }
+  .stamp-circle::before {
+    content: 'COWBOY STATE';
+    position: absolute;
+    top: 10px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.48rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--heritage-red);
+  }
+  .stamp-circle::after {
+    content: '★ EST. ★';
+    position: absolute;
+    bottom: 12px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.45rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--heritage-red);
+  }
+  .stamp-circle .st-letters {
+    font-family: Impact, 'Anton', sans-serif;
+    font-size: 42px;
+    color: var(--heritage-red);
+    letter-spacing: 4px;
+    line-height: 1;
+    margin-top: 4px;
+  }
+
+  /* Social avatar */
+  .avatar-mock {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--heritage-red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 3px var(--deep-black), 0 0 0 5px var(--heritage-red);
+  }
+  .avatar-mock .av-letters {
+    font-family: Impact, 'Anton', sans-serif;
+    font-size: 30px;
+    color: var(--white);
+    letter-spacing: 3px;
+    line-height: 1;
+  }
+
+  /* Loading screen mock */
+  .loading-mock {
+    text-align: center;
+    width: 100%;
+  }
+  .loading-mock .load-letters {
+    font-family: Impact, 'Anton', sans-serif;
+    font-size: 48px;
+    color: var(--white);
+    letter-spacing: 8px;
+    line-height: 1;
+    animation: loadPulse 2s ease-in-out infinite;
+  }
+  @keyframes loadPulse {
+    0%, 100% { opacity: 1; text-shadow: 0 0 20px rgba(147,19,20,0.3); }
+    50% { opacity: 0.6; text-shadow: 0 0 40px rgba(147,19,20,0.5); }
+  }
+  .loading-mock .load-bar {
+    width: 120px;
+    height: 2px;
+    background: rgba(218,213,204,0.15);
+    margin: 16px auto 0;
+    border-radius: 1px;
+    position: relative;
+    overflow: hidden;
+  }
+  .loading-mock .load-bar::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -40%;
+    width: 40%;
+    height: 100%;
+    background: var(--heritage-red);
+    animation: loadSlide 1.5s ease-in-out infinite;
+  }
+  @keyframes loadSlide {
+    0% { left: -40%; }
+    100% { left: 100%; }
+  }
+
+  /* ---- COLOR SPECS ---- */
+  .spec-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .spec-card {
+    border: 1px solid rgba(218,213,204,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .spec-swatch {
+    height: 60px;
+  }
+  .spec-info {
+    padding: 12px 14px;
+  }
+  .spec-info strong {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--white);
+    margin-bottom: 2px;
+  }
+  .spec-info code {
+    font-size: 0.72rem;
+    color: var(--flint);
+  }
+
+  /* ---- FOOTER ---- */
+  .footer {
+    text-align: center;
+    padding: 40px 24px;
+    border-top: 1px solid rgba(218,213,204,0.08);
+    margin-top: 40px;
+  }
+  .footer .f-brand {
+    font-family: Impact, 'Anton', sans-serif;
+    font-size: 28px;
+    color: var(--heritage-red);
+    letter-spacing: 6px;
+    line-height: 1;
+  }
+  .footer p {
+    font-size: 0.78rem;
+    color: var(--flint);
+    margin-top: 8px;
+    letter-spacing: 1px;
+  }
+
+  @media (max-width: 768px) {
+    .lockups { grid-template-columns: 1fr; }
+    .app-grid { grid-template-columns: 1fr; }
+    .app-card.wide { grid-column: span 1; }
+    .app-card.tall { grid-row: span 1; }
+    .spec-grid { grid-template-columns: 1fr 1fr; }
+    .hero-letters { letter-spacing: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== HERO ========== -->
+<div class="hero">
+  <div class="hero-brand">
+    <div class="hero-letters">CS</div>
+    <svg class="hero-rocker" width="200" height="36" viewBox="0 0 200 36">
+      <path d="M 8 6 Q 100 42 192 6" stroke="#931314" stroke-width="9" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="hero-wordmark">Cowboy State</div>
+    <div class="hero-sub">Software · Cyber · Research</div>
+  </div>
+  <div class="scroll-hint">Scroll to explore ↓</div>
+</div>
+
+<!-- ========== PRIMARY LOCKUPS ========== -->
+<div class="section">
+  <div class="section-header">
+    <h2>Primary Brand Lockups</h2>
+    <p>The two approved treatments — use these consistently across all media</p>
+  </div>
+
+  <div class="lockups">
+    <!-- Treatment 1: Red on Dark -->
+    <div class="lockup-card">
+      <div class="lockup-display bg-dark">
+        <div class="brand-mark">
+          <div class="letters" style="font-size: 88px; color: #931314; letter-spacing: 10px;">CS</div>
+          <svg width="130" height="28" viewBox="0 0 130 28">
+            <path d="M 5 5 Q 65 32 125 5" stroke="#931314" stroke-width="7" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div class="wordmark" style="font-size: 14px; color: #931314;">Cowboy State</div>
+        </div>
+      </div>
+      <div class="lockup-label">
+        <h3>Treatment A — Heritage Red on Dark</h3>
+        <span>Primary mark. Use on dark backgrounds, hero sections, app screens.</span>
+      </div>
+    </div>
+
+    <!-- Treatment 2: White/Red on Dark -->
+    <div class="lockup-card">
+      <div class="lockup-display bg-dark">
+        <div class="brand-mark">
+          <div class="letters" style="font-size: 88px; color: #FFFFFF; letter-spacing: 10px;">CS</div>
+          <svg width="130" height="28" viewBox="0 0 130 28">
+            <path d="M 5 5 Q 65 32 125 5" stroke="#931314" stroke-width="7" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div class="wordmark" style="font-size: 14px; color: #FFFFFF;">Cowboy State</div>
+        </div>
+      </div>
+      <div class="lockup-label">
+        <h3>Treatment B — White + Red Rocker on Dark</h3>
+        <span>High-contrast variant. The red rocker anchors the brand while white letters pop.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full lockup with LLC -->
+  <div class="lockups" style="margin-top: 24px;">
+    <div class="lockup-card">
+      <div class="lockup-display bg-dark">
+        <div class="brand-mark">
+          <div class="letters" style="font-size: 76px; color: #931314; letter-spacing: 10px;">CS</div>
+          <svg width="120" height="24" viewBox="0 0 120 24">
+            <path d="M 5 4 Q 60 28 115 4" stroke="#931314" stroke-width="6" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div class="wordmark" style="font-size: 16px; color: #DAD5CC; margin-top: 24px;">Cowboy State</div>
+          <div class="llc" style="font-size: 9px; color: #565C5E; letter-spacing: 8px;">LLC</div>
+        </div>
+      </div>
+      <div class="lockup-label">
+        <h3>Full Lockup — Red Mark + Mist Wordmark</h3>
+        <span>Complete brand with "Cowboy State" in Balboa Mist and LLC beneath. For formal/corporate use.</span>
+      </div>
+    </div>
+
+    <div class="lockup-card">
+      <div class="lockup-display bg-dark">
+        <div class="brand-mark">
+          <div class="letters" style="font-size: 76px; color: #FFFFFF; letter-spacing: 10px;">CS</div>
+          <svg width="120" height="24" viewBox="0 0 120 24">
+            <path d="M 5 4 Q 60 28 115 4" stroke="#931314" stroke-width="6" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div class="wordmark" style="font-size: 16px; color: #FFFFFF; margin-top: 24px;">Cowboy State</div>
+          <div class="llc" style="font-size: 9px; color: #565C5E; letter-spacing: 8px;">LLC</div>
+        </div>
+      </div>
+      <div class="lockup-label">
+        <h3>Full Lockup — White Mark + Red Rocker</h3>
+        <span>Maximum contrast variant. White everything except the red rocker as the signature element.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ========== APPLICATIONS ========== -->
+<div class="section">
+  <div class="section-header">
+    <h2>Brand Applications</h2>
+    <p>How the mark works across real-world touchpoints</p>
+  </div>
+
+  <div class="app-grid">
+
+    <!-- Nav Bar -->
+    <div class="app-card wide">
+      <div class="app-display" style="background: var(--near-black); padding: 24px;">
+        <div class="nav-mock">
+          <div class="nav-brand">
+            <div>
+              <span class="nav-brand-icon">CS</span>
+              <svg width="32" height="8" viewBox="0 0 32 8">
+                <path d="M 1 1 Q 16 10 31 1" stroke="#931314" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <span class="nav-brand-text">Cowboy State</span>
+          </div>
+          <div class="nav-links">
+            <span>Services</span>
+            <span>About</span>
+            <span>Contact</span>
+          </div>
+        </div>
+      </div>
+      <div class="app-label">
+        <h4>Website Navigation Bar</h4>
+        <span>Brand mark + wordmark in horizontal lockup. Red CS with Balboa Mist text.</span>
+      </div>
+    </div>
+
+    <!-- Favicon -->
+    <div class="app-card">
+      <div class="app-display" style="background: var(--deep-black);">
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <div class="favicon-mock">
+            <span class="f-letters">CS</span>
+          </div>
+          <div class="favicon-mock" style="background: var(--deep-black); border: 2px solid var(--heritage-red);">
+            <span class="f-letters" style="color: var(--heritage-red); font-size: 20px;">CS</span>
+          </div>
+          <div class="favicon-mock" style="border-radius: 50%;">
+            <span class="f-letters">CS</span>
+          </div>
+        </div>
+      </div>
+      <div class="app-label">
+        <h4>Favicons &amp; App Icons</h4>
+        <span>Three variants: filled, outlined, circular</span>
+      </div>
+    </div>
+
+    <!-- Business Card -->
+    <div class="app-card">
+      <div class="app-display" style="background: var(--near-black);">
+        <div class="bcard">
+          <div class="bcard-top">
+            <div class="bcard-brand">
+              <span class="bc-letters">CS</span>
+              <svg width="42" height="10" viewBox="0 0 42 10">
+                <path d="M 2 2 Q 21 12 40 2" stroke="#931314" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-family: Impact, sans-serif; font-size: 0.52rem; color: #565C5E; letter-spacing: 3px;">COWBOY STATE</div>
+              <div style="font-size: 0.45rem; color: #3E4345; letter-spacing: 2px;">LLC</div>
+            </div>
+          </div>
+          <div class="bcard-bottom">
+            <div class="name">YOUR NAME</div>
+            <div class="title">FOUNDER & CEO</div>
+          </div>
+        </div>
+      </div>
+      <div class="app-label">
+        <h4>Business Card — Front</h4>
+        <span>Dark card stock with white/red brand. Premium feel.</span>
+      </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div class="app-card">
+      <div class="app-display" style="background: var(--deep-black); min-height: 180px;">
+        <div class="loading-mock">
+          <div class="load-letters">CS</div>
+          <svg width="80" height="16" viewBox="0 0 80 16">
+            <path d="M 4 3 Q 40 18 76 3" stroke="#931314" stroke-width="4" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div class="load-bar"></div>
+        </div>
+      </div>
+      <div class="app-label">
+        <h4>App Loading Screen</h4>
+        <span>Animated pulse with red progress bar</span>
+      </div>
+    </div>
+
+    <!-- Social Avatar -->
+    <div class="app-card">
+      <div class="app-display" style="background: var(--deep-black);">
+        <div style="display: flex; gap: 20px; align-items: center;">
+          <div class="avatar-mock">
+            <span class="av-letters">CS</span>
+          </div>
+          <div class="avatar-mock" style="background: var(--deep-black); box-shadow: 0 0 0 3px var(--deep-black), 0 0 0 5px rgba(218,213,204,0.2);">
+            <span class="av-letters" style="color: var(--heritage-red);">CS</span>
+          </div>
+        </div>
+      </div>
+      <div class="app-label">
+        <h4>Social Media Avatars</h4>
+        <span>Filled red + outlined dark variants</span>
+      </div>
+    </div>
+
+    <!-- Stamp / Seal -->
+    <div class="app-card">
+      <div class="app-display" style="background: var(--deep-black);">
+        <div class="stamp-mock">
+          <div class="stamp-circle">
+            <span class="st-letters">CS</span>
+          </div>
+        </div>
+      </div>
+      <div class="app-label">
+        <h4>Seal / Stamp Mark</h4>
+        <span>For certificates, invoices, official documents</span>
+      </div>
+    </div>
+
+    <!-- Document Watermark -->
+    <div class="app-card wide">
+      <div class="app-display" style="background: var(--near-black); padding: 24px;">
+        <div class="watermark-mock">
+          <div class="wm-lines">
+            <div class="wm-line"></div>
+            <div class="wm-line"></div>
+            <div class="wm-line"></div>
+            <div class="wm-line"></div>
+          </div>
+          <div class="wm-stamp">CS</div>
+        </div>
+      </div>
+      <div class="app-label">
+        <h4>Document Watermark</h4>
+        <span>Subtle Heritage Red at 12% opacity. Marks reports, proposals, and deliverables as Cowboy State property.</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ========== COLOR SPEC ========== -->
+<div class="section">
+  <div class="section-header">
+    <h2>Color Specification</h2>
+    <p>Official brand palette — use exact values for consistency</p>
+  </div>
+
+  <div class="spec-grid">
+    <div class="spec-card">
+      <div class="spec-swatch" style="background: #931314;"></div>
+      <div class="spec-info">
+        <strong>Heritage Red</strong>
+        <code>#931314 · rgb(147,19,20)</code>
+      </div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-swatch" style="background: #DAD5CC;"></div>
+      <div class="spec-info">
+        <strong>Balboa Mist</strong>
+        <code>#DAD5CC · rgb(218,213,204)</code>
+      </div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-swatch" style="background: #565C5E;"></div>
+      <div class="spec-info">
+        <strong>Flint</strong>
+        <code>#565C5E · rgb(86,92,94)</code>
+      </div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-swatch" style="background: #FFFFFF; border-bottom: 1px solid rgba(218,213,204,0.3);"></div>
+      <div class="spec-info">
+        <strong>White</strong>
+        <code>#FFFFFF · rgb(255,255,255)</code>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-top: 32px; padding: 24px; border: 1px solid rgba(218,213,204,0.1); border-radius: 10px;">
+    <p style="font-size: 0.85rem; color: var(--flint);">
+      <strong style="color: var(--white);">Font:</strong> Impact (primary) · Anton (web fallback) &nbsp;&nbsp;|&nbsp;&nbsp;
+      <strong style="color: var(--white);">Backgrounds:</strong> #141617 (deep) · #1C1F21 (near-black) · #3E4345 (flint-dark)
+    </p>
+  </div>
+</div>
+
+<!-- ========== FOOTER ========== -->
+<div class="footer">
+  <div class="f-brand">CS</div>
+  <svg width="60" height="14" viewBox="0 0 60 14">
+    <path d="M 3 3 Q 30 16 57 3" stroke="#931314" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </svg>
+  <p style="margin-top: 12px;">Cowboy State LLC — Brand Mark Sheet — Confidential</p>
+</div>
+
+</body>
+</html>

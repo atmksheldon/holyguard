@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert as RNAlert, KeyboardAvoidingView, Platform } from 'react-native';
+import { logger } from '../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -41,7 +42,7 @@ export const CreateWatchlistEntryScreen = ({ navigation, route }: any) => {
         setPhotoUris(prev => [...prev, result.assets[0].uri]);
       }
     } catch (error) {
-      console.error('Error adding photo:', error);
+      logger.error('Error adding photo:', error);
     }
   };
 
@@ -95,7 +96,7 @@ export const CreateWatchlistEntryScreen = ({ navigation, route }: any) => {
       RNAlert.alert('Success', 'Watchlist entry created.');
       navigation.goBack();
     } catch (error) {
-      console.error('Error creating watchlist entry:', error);
+      logger.error('Error creating watchlist entry:', error);
       RNAlert.alert('Error', 'Failed to create watchlist entry.');
     } finally {
       setIsSaving(false);

@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { logger } from '../utils/logger';
 import { Alert } from 'react-native';
 import { UserProfile } from '../types';
 import { auth, db } from '../config/firebase';
@@ -39,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     setLoading(false);
                 }
             } catch (error) {
-                console.error('Error loading cached user:', error);
+                logger.error('Error loading cached user:', error);
             }
         };
         loadCachedUser();
@@ -103,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(profile);
             await AsyncStorage.setItem(USER_CACHE_KEY, JSON.stringify(profile));
         } catch (error: any) {
-            console.error('Error fetching user profile:', error);
+            logger.error('Error fetching user profile:', error);
             // Fallback: create profile from Firebase Auth data
             const fallbackProfile: UserProfile = {
                 id: userId,
