@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { logger } from '../utils/logger';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Image, ScrollView, ActivityIndicator, Linking, Platform, Alert as RNAlert, Dimensions } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -166,7 +167,7 @@ export const AlertDetailModal: React.FC<AlertDetailModalProps> = ({ alert, visib
           });
         }
       } catch (error) {
-        console.error('Error fetching organization:', error);
+        logger.error('Error fetching organization:', error);
         setOrgDetails({
           name: alert.location,
           address: 'Unable to load details',
@@ -389,6 +390,13 @@ export const AlertDetailModal: React.FC<AlertDetailModalProps> = ({ alert, visib
                 </View>
               )}
 
+              {alert.policeIncidentNumber ? (
+                <View style={styles.policeNumberRow}>
+                  <MaterialCommunityIcons name="shield-outline" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
+                  <Text style={styles.metaText}>Police Incident #: {alert.policeIncidentNumber}</Text>
+                </View>
+              ) : null}
+
               {alert.description && (
                 <View style={styles.descriptionSection}>
                   <Text style={styles.descriptionLabel}>DESCRIPTION</Text>
@@ -560,6 +568,11 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   reporterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.s,
+  },
+  policeNumberRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: theme.spacing.m,

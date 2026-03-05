@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from '../utils/logger';
 import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, Modal, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, FlatList } from 'react-native';
 import { theme } from '../theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -9,7 +10,7 @@ interface IncidentReportModalProps {
     visible: boolean;
     photoUri: string | null;
     onClose: () => void;
-    onSubmit: (description: string, addToWatchlist: boolean, category: string, allPhotoUris: string[], alertLevel: 'yellow' | 'red') => void;
+    onSubmit: (description: string, addToWatchlist: boolean, category: string, allPhotoUris: string[], alertLevel: 'yellow' | 'red', policeIncidentNumber: string) => void;
     isSubmitting: boolean;
 }
 
@@ -25,6 +26,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
     const [selectedCategory, setSelectedCategory] = useState('');
     const [alertLevel, setAlertLevel] = useState<'yellow' | 'red' | null>(null);
     const [additionalPhotos, setAdditionalPhotos] = useState<string[]>([]);
+    const [policeIncidentNumber, setPoliceIncidentNumber] = useState('');
 
     const allPhotos = [
         ...(photoUri ? [photoUri] : []),
@@ -33,12 +35,13 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
 
     const handleSubmit = () => {
         if (description.trim().length === 0 || !selectedCategory || !alertLevel) return;
-        onSubmit(description, addToWatchlist, selectedCategory, allPhotos, alertLevel);
+        onSubmit(description, addToWatchlist, selectedCategory, allPhotos, alertLevel, policeIncidentNumber.trim());
         setDescription('');
         setAddToWatchlist(false);
         setSelectedCategory('');
         setAlertLevel(null);
         setAdditionalPhotos([]);
+        setPoliceIncidentNumber('');
     };
 
     const handleAddPhoto = async () => {
@@ -59,7 +62,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                 setAdditionalPhotos(prev => [...prev, result.assets[0].uri]);
             }
         } catch (error) {
-            console.error('Error adding photo:', error);
+            logger.error('Error adding photo:', error);
         }
     };
 
@@ -198,6 +201,16 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                             numberOfLines={3}
                             value={description}
                             onChangeText={setDescription}
+                            editable={!isSubmitting}
+                        />
+
+                        <Text style={styles.label}>Police Incident #:</Text>
+                        <TextInput
+                            style={styles.policeNumberInput}
+                            placeholder="Optional — enter if available"
+                            placeholderTextColor={theme.colors.gray}
+                            value={policeIncidentNumber}
+                            onChangeText={setPoliceIncidentNumber}
                             editable={!isSubmitting}
                         />
 
@@ -445,5 +458,15 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: theme.colors.danger,
         flex: 1,
+    },
+    policeNumberInput: {
+        backgroundColor: theme.colors.white,
+        borderRadius: 8,
+        padding: theme.spacing.m,
+        fontSize: 16,
+        color: theme.colors.textPrimary,
+        borderWidth: 1,
+        borderColor: theme.colors.surfaceDark,
+        marginBottom: theme.spacing.m,
     },
 });

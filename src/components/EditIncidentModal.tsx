@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image, Alert as RNAlert } from 'react-native';
+import { logger } from '../utils/logger';
 import { theme } from '../theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -28,12 +29,14 @@ export const EditIncidentModal: React.FC<EditIncidentModalProps> = ({
     const [selectedCategory, setSelectedCategory] = useState('');
     const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
     const [newPhotoUris, setNewPhotoUris] = useState<string[]>([]);
+    const [policeIncidentNumber, setPoliceIncidentNumber] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         if (alert && visible) {
             setDescription(alert.description || '');
             setSelectedCategory(alert.category || '');
+            setPoliceIncidentNumber(alert.policeIncidentNumber || '');
             const photos = alert.imageUrls?.length
                 ? [...alert.imageUrls]
                 : alert.imageUrl
@@ -60,7 +63,7 @@ export const EditIncidentModal: React.FC<EditIncidentModalProps> = ({
                 setNewPhotoUris(prev => [...prev, result.assets[0].uri]);
             }
         } catch (error) {
-            console.error('Error adding photo:', error);
+            logger.error('Error adding photo:', error);
         }
     };
 
@@ -105,6 +108,7 @@ export const EditIncidentModal: React.FC<EditIncidentModalProps> = ({
                 category: selectedCategory,
                 imageUrls: allImageUrls,
                 imageUrl: allImageUrls[0] || null,
+                policeIncidentNumber: policeIncidentNumber.trim() || null,
                 updatedAt: serverTimestamp(),
                 updatedBy: user.id,
                 updatedByName: user.name,
@@ -113,7 +117,7 @@ export const EditIncidentModal: React.FC<EditIncidentModalProps> = ({
             onSaved();
             onClose();
         } catch (error) {
-            console.error('Error updating incident:', error);
+            logger.error('Error updating incident:', error);
             RNAlert.alert('Error', 'Failed to update incident. Please try again.');
         } finally {
             setIsSaving(false);
@@ -218,6 +222,17 @@ export const EditIncidentModal: React.FC<EditIncidentModalProps> = ({
                             numberOfLines={4}
                             value={description}
                             onChangeText={setDescription}
+                            editable={!isSaving}
+                        />
+
+                        {/* Police Incident Number */}
+                        <Text style={styles.label}>Police Incident #:</Text>
+                        <TextInput
+                            style={styles.policeNumberInput}
+                            placeholder="Optional — enter if available"
+                            placeholderTextColor={theme.colors.gray}
+                            value={policeIncidentNumber}
+                            onChangeText={setPoliceIncidentNumber}
                             editable={!isSaving}
                         />
 
@@ -378,5 +393,15 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         letterSpacing: 1,
+    },
+    policeNumberInput: {
+        backgroundColor: theme.colors.white,
+        borderRadius: 8,
+        padding: theme.spacing.m,
+        fontSize: 16,
+        color: theme.colors.textPrimary,
+        borderWidth: 1,
+        borderColor: theme.colors.surfaceDark,
+        marginBottom: theme.spacing.l,
     },
 });

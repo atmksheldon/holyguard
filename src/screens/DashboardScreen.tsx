@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, StatusBar, Alert as RNAlert, ActivityIndicator, TouchableOpacity, TextInput, Image } from 'react-native';
+import { logger } from '../utils/logger';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { AlertCard } from '../components/AlertCard';
@@ -72,7 +73,7 @@ export const DashboardScreen = ({ navigation }: any) => {
 
   // Real-time listener for alerts from Firestore
   useEffect(() => {
-    console.log('[Dashboard] Setting up alerts listener...');
+    logger.log('[Dashboard] Setting up alerts listener...');
     
     const alertsQuery = query(
       collection(db, 'alerts'),
@@ -116,6 +117,7 @@ export const DashboardScreen = ({ navigation }: any) => {
           updatedBy: data.updatedBy,
           updatedByName: data.updatedByName,
           alertLevel: data.alertLevel,
+          policeIncidentNumber: data.policeIncidentNumber,
         };
       });
       
@@ -157,7 +159,7 @@ export const DashboardScreen = ({ navigation }: any) => {
   const takePicture = async () => {
       if (!cameraRef) return;
       
-      console.log('[Camera] Taking picture...');
+      logger.log('[Camera] Taking picture...');
       
       try {
         // Take picture first (don't block on GPS)
@@ -167,7 +169,7 @@ export const DashboardScreen = ({ navigation }: any) => {
         });
         
         if (photo) {
-          console.log('[Camera] Picture taken successfully');
+          logger.log('[Camera] Picture taken successfully');
           setCapturedPhoto(photo.uri);
           setIsCameraVisible(false);
           setIsModalVisible(true);
@@ -176,7 +178,7 @@ export const DashboardScreen = ({ navigation }: any) => {
           getLocationInBackground();
         }
       } catch (error) {
-        console.error('[Camera] Error taking picture:', error);
+        logger.error('[Camera] Error taking picture:', error);
         RNAlert.alert('Error', 'Failed to take picture. Please try again.');
       }
   };
@@ -194,13 +196,13 @@ export const DashboardScreen = ({ navigation }: any) => {
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         });
-        console.log('[GPS] Location captured:', location.coords.latitude, location.coords.longitude);
+        logger.log('[GPS] Location captured:', location.coords.latitude, location.coords.longitude);
       } else {
-        console.log('[GPS] Location permission not granted');
+        logger.log('[GPS] Location permission not granted');
         setPhotoLocation(null);
       }
     } catch (error) {
-      console.error('[GPS] Error getting location:', error);
+      logger.error('[GPS] Error getting location:', error);
       setPhotoLocation(null);
     }
   };
@@ -229,7 +231,7 @@ export const DashboardScreen = ({ navigation }: any) => {
         getLocationInBackground();
       }
     } catch (error) {
-      console.error('Error choosing photo:', error);
+      logger.error('Error choosing photo:', error);
       RNAlert.alert('Error', 'Failed to select photo');
     }
   };
@@ -253,7 +255,7 @@ export const DashboardScreen = ({ navigation }: any) => {
     return await getDownloadURL(storageRef);
   };
 
-  const handleSubmitReport = async (description: string, addToWatchlist: boolean, category: string, allPhotoUris: string[], alertLevel: 'yellow' | 'red') => {
+  const handleSubmitReport = async (description: string, addToWatchlist: boolean, category: string, allPhotoUris: string[], alertLevel: 'yellow' | 'red', policeIncidentNumber: string) => {
       if (allPhotoUris.length === 0) {
           return;
       }
@@ -296,6 +298,10 @@ export const DashboardScreen = ({ navigation }: any) => {
             reporterName: user?.name || 'Unknown',
         };
 
+        if (policeIncidentNumber) {
+          alertData.policeIncidentNumber = policeIncidentNumber;
+        }
+
         if (photoLocation) {
           alertData.latitude = photoLocation.latitude;
           alertData.longitude = photoLocation.longitude;
@@ -327,7 +333,7 @@ export const DashboardScreen = ({ navigation }: any) => {
               });
             }
           } catch (watchlistError) {
-            console.error('Error posting to watchlist:', watchlistError);
+            logger.error('Error posting to watchlist:', watchlistError);
           }
         }
 
@@ -420,8 +426,7 @@ export const DashboardScreen = ({ navigation }: any) => {
                 NETWORK: <Text style={styles.onlineStatus}>ONLINE</Text>
             </Text>
             <View style={styles.headerSponsorRow}>
-              <Image source={require('../../assets/nationwide1.png')} style={styles.headerSponsorLogo} resizeMode="contain" />
-              <Image source={require('../../assets/adt1.png')} style={styles.headerSponsorLogo} resizeMode="contain" />
+              <Image source={require('../../assets/uscca_logo.png')} style={styles.headerSponsorLogo} resizeMode="contain" />
             </View>
         </View>
         <View style={styles.headerRight}>
@@ -549,8 +554,7 @@ export const DashboardScreen = ({ navigation }: any) => {
                     <View style={styles.sponsorFooter}>
                       <Text style={styles.sponsorText}>Security Network powered by</Text>
                       <View style={styles.sponsorFooterLogos}>
-                        <Image source={require('../../assets/nationwide1.png')} style={styles.sponsorFooterLogo} resizeMode="contain" />
-                        <Image source={require('../../assets/adt1.png')} style={styles.sponsorFooterLogo} resizeMode="contain" />
+                        <Image source={require('../../assets/uscca_logo.png')} style={styles.sponsorFooterLogo} resizeMode="contain" />
                       </View>
                     </View>
                   }
@@ -624,8 +628,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   headerSponsorLogo: {
-    width: 36,
-    height: 18,
+    width: 50,
+    height: 25,
   },
   networkStatus: {
     fontSize: 12,
@@ -868,7 +872,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   sponsorFooterLogo: {
-    width: 60,
-    height: 24,
+    width: 80,
+    height: 34,
   }
 });

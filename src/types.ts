@@ -17,6 +17,7 @@ export interface Alert {
     updatedBy?: string;
     updatedByName?: string;
     alertLevel?: 'yellow' | 'red';
+    policeIncidentNumber?: string;
 }
 
 export interface WatchlistEntry {

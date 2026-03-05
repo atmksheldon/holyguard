@@ -21,7 +21,8 @@ service cloud.firestore {
 
     // User Profiles
     match /users/{userId} {
-      // Anyone authenticated can read user profiles (for user directory)
+      // Any authenticated user can read profiles (required for User Directory / DM feature).
+      // Profile data (name, role, org) is not considered sensitive.
       allow read: if request.auth != null;
       // Only the user can update their own profile
       allow write: if request.auth != null && request.auth.uid == userId;
@@ -37,7 +38,8 @@ service cloud.firestore {
         request.resource.data.timestamp != null &&
         // latitude and longitude are optional but must be numbers if present
         (!('latitude' in request.resource.data) || request.resource.data.latitude is number) &&
-        (!('longitude' in request.resource.data) || request.resource.data.longitude is number);
+        (!('longitude' in request.resource.data) || request.resource.data.longitude is number) &&
+        (!('policeIncidentNumber' in request.resource.data) || request.resource.data.policeIncidentNumber is string);
       // Reporter or admin can update incidents (edit description, add photos, change category)
       allow update: if request.auth != null &&
         (request.auth.uid == resource.data.reporterId ||
@@ -50,7 +52,8 @@ service cloud.firestore {
     // Team Messages
     match /team_messages/{messageId} {
       // Users can only read messages from their own organization
-      allow read: if request.auth != null;
+      allow read: if request.auth != null &&
+        resource.data.organizationId == getUserOrgId();
       // Validate message structure
       allow create: if request.auth != null &&
         request.resource.data.text is string &&
@@ -153,8 +156,9 @@ service cloud.firestore {
 
     // Direct Messages
     match /direct_messages/{messageId} {
-      // Anyone authenticated can read (filtered by conversation on client)
-      allow read: if request.auth != null;
+      // Users can only read messages from conversations they participate in
+      allow read: if request.auth != null &&
+        request.auth.uid in get(/databases/$(database)/documents/conversations/$(resource.data.conversationId)).data.participants;
       // Users can create messages they are sending (text or image)
       allow create: if request.auth != null &&
         request.resource.data.senderId == request.auth.uid &&
@@ -167,8 +171,9 @@ service cloud.firestore {
 
     // Watchlist Entries
     match /watchlist/{entryId} {
-      // Authenticated users can read watchlist entries
-      allow read: if request.auth != null;
+      // Users can only read watchlist entries from their organization
+      allow read: if request.auth != null &&
+        resource.data.organizationId == getUserOrgId();
       // Authenticated users can create entries with required fields
       allow create: if request.auth != null &&
         request.resource.data.name is string &&
@@ -188,8 +193,9 @@ service cloud.firestore {
 
     // Resources
     match /resources/{resourceId} {
-      // All authenticated users can read resources
-      allow read: if request.auth != null;
+      // Users can only read resources from their organization
+      allow read: if request.auth != null &&
+        resource.data.organizationId == getUserOrgId();
       // All authenticated users can create resources
       allow create: if request.auth != null &&
         request.resource.data.title is string &&
@@ -210,6 +216,16 @@ service cloud.firestore {
     match /mail/{mailId} {
       allow create: if request.auth != null;
       allow read: if false;
+    }
+
+    // Admin audit logs — immutable, write-only for authenticated users, read-only for super_admins
+    match /admin_logs/{logId} {
+      allow read: if request.auth != null && isSuperAdmin();
+      allow create: if request.auth != null &&
+        request.resource.data.action is string &&
+        request.resource.data.performedBy == request.auth.uid &&
+        request.resource.data.timestamp != null;
+      allow update, delete: if false; // Audit logs are immutable
     }
   }
 }
