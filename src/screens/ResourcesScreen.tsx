@@ -55,6 +55,8 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({ navigation }) 
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
   const [placesLoading, setPlacesLoading] = useState(true);
   const [placesError, setPlacesError] = useState<string | null>(null);
+  const [searchRadiusMiles, setSearchRadiusMiles] = useState(25);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   useEffect(() => {
     const resourcesQuery = query(
@@ -89,7 +91,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({ navigation }) 
     return () => unsubscribe();
   }, []);
 
-  // Fetch nearby firearms training locations
+  // Get user location on mount
   useEffect(() => {
     let cancelled = false;
 
@@ -107,12 +109,40 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({ navigation }) 
         const position = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });
-        const { latitude, longitude } = position.coords;
+        if (!cancelled) {
+          setUserLocation(position.coords);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          logger.error('Error getting user location:', err);
+          setPlacesError('Unable to get your location');
+          setPlacesLoading(false);
+        }
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, []);
+
+  // Fetch nearby firearms training locations when location or radius changes
+  useEffect(() => {
+    if (!userLocation) return;
+
+    let cancelled = false;
+    setPlacesLoading(true);
+    setPlacesError(null);
+    setNearbyPlaces([]);
+
+    const radiusMeters = Math.round(searchRadiusMiles * 1609.34);
+
+    (async () => {
+      try {
+        const { latitude, longitude } = userLocation;
 
         const url =
           `https://maps.googleapis.com/maps/api/place/nearbysearch/json` +
           `?location=${latitude},${longitude}` +
-          `&radius=40000` +
+          `&radius=${radiusMeters}` +
           `&keyword=${encodeURIComponent('firearms training')}` +
           `&key=${GOOGLE_PLACES_API_KEY}`;
 
@@ -134,7 +164,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({ navigation }) 
           places.sort((a, b) => a.distanceMiles - b.distanceMiles);
           setNearbyPlaces(places);
         } else if (data.status === 'ZERO_RESULTS') {
-          setPlacesError('No training locations found nearby');
+          setPlacesError('No training locations found within ' + searchRadiusMiles + ' miles');
         } else {
           setPlacesError('Unable to load nearby training locations');
         }
@@ -149,7 +179,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({ navigation }) 
     })();
 
     return () => { cancelled = true; };
-  }, []);
+  }, [userLocation, searchRadiusMiles]);
 
   const filteredResources = useMemo(() => {
     let results = resources;
@@ -301,11 +331,34 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({ navigation }) 
     </TouchableOpacity>
   );
 
+  const RADIUS_OPTIONS = [10, 25, 50, 100];
+
   const renderNearbyTrainingSection = () => (
     <View style={styles.nearbySection}>
       <View style={styles.nearbySectionHeader}>
         <MaterialCommunityIcons name="crosshairs-gps" size={20} color={theme.colors.primary} />
         <Text style={styles.nearbySectionTitle}>Training Near You</Text>
+      </View>
+      <View style={styles.radiusRow}>
+        {RADIUS_OPTIONS.map((miles) => (
+          <TouchableOpacity
+            key={miles}
+            style={[
+              styles.radiusChip,
+              searchRadiusMiles === miles && styles.radiusChipActive,
+            ]}
+            onPress={() => setSearchRadiusMiles(miles)}
+          >
+            <Text
+              style={[
+                styles.radiusChipText,
+                searchRadiusMiles === miles && styles.radiusChipTextActive,
+              ]}
+            >
+              {miles} mi
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
       {placesLoading ? (
         <View style={styles.nearbyLoading}>
@@ -693,6 +746,31 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: theme.colors.textPrimary,
     marginLeft: 8,
+  },
+  radiusRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    gap: 8,
+  },
+  radiusChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.surfaceDark,
+  },
+  radiusChipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  radiusChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.colors.textPrimary,
+  },
+  radiusChipTextActive: {
+    color: '#fff',
   },
   nearbyLoading: {
     flexDirection: 'row',
