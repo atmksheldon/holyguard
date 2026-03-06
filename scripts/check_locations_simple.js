@@ -1,8 +1,9 @@
+require('dotenv').config();
 const { initializeApp } = require('firebase/app');
 const { getFirestore, collection, getDocs } = require('firebase/firestore');
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBXmbb6enSevC8eSbEDcJJZmSan90JWYoc",
+  apiKey: process.env.FIREBASE_API_KEY || '',
   authDomain: "holyguard-app.firebaseapp.com",
   projectId: "holyguard-app",
   storageBucket: "holyguard-app.firebasestorage.app",
