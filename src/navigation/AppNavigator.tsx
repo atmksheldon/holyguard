@@ -22,6 +22,7 @@ import { AdminReviewScreen } from '../screens/AdminReviewScreen';
 import { DemoSelectorScreen } from '../screens/DemoSelectorScreen';
 import { DemoSchoolGuardScreen } from '../screens/DemoSchoolGuardScreen';
 import { DemoCompanyGuardScreen } from '../screens/DemoCompanyGuardScreen';
+import { SeatManagementScreen } from '../screens/SeatManagementScreen';
 import { useAuth } from '../context/AuthContext';
 import { theme } from '../theme';
 
@@ -58,6 +59,7 @@ const DashboardNavigator = () => {
       <DashboardStack.Screen name="DemoSchoolGuard" component={DemoSchoolGuardScreen} />
       <DashboardStack.Screen name="DemoCompanyGuard" component={DemoCompanyGuardScreen} />
       <DashboardStack.Screen name="CreateWatchlistEntry" component={CreateWatchlistEntryScreen} />
+      <DashboardStack.Screen name="SeatManagement" component={SeatManagementScreen} />
     </DashboardStack.Navigator>
   );
 };

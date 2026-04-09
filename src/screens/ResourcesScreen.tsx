@@ -16,7 +16,7 @@ import { RESOURCE_CATEGORIES_WITH_ALL, RESOURCE_CATEGORY_COLORS } from '../const
 const CATEGORIES = RESOURCE_CATEGORIES_WITH_ALL;
 const CATEGORY_COLORS = RESOURCE_CATEGORY_COLORS;
 
-const USCCA_TRAINING_URL = 'https://www.usconcealedcarry.com/firearms-training/range-retailer/texas-partners/uscca/event-allen-tx-should-i-shoot-25cbc/';
+const COWBOY_STATE_URL = 'https://cowboystateops.com';
 
 interface Resource {
   id: string;
@@ -386,21 +386,21 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({ navigation }) 
   const renderTrainingCard = () => (
     <TouchableOpacity
       style={styles.trainingCard}
-      onPress={() => Linking.openURL(USCCA_TRAINING_URL)}
+      onPress={() => Linking.openURL(COWBOY_STATE_URL)}
       activeOpacity={0.8}
     >
       <View style={styles.trainingBadge}>
-        <MaterialCommunityIcons name="star" size={14} color="#fff" />
-        <Text style={styles.trainingBadgeText}>SPONSORED</Text>
+        <MaterialCommunityIcons name="shield-star" size={14} color="#fff" />
+        <Text style={styles.trainingBadgeText}>COWBOY STATE</Text>
       </View>
-      <Image source={require('../../assets/uscca_logo.png')} style={styles.trainingLogo} resizeMode="contain" />
-      <Text style={styles.trainingTitle}>Should I Shoot?</Text>
-      <Text style={styles.trainingSubtitle}>USCCA Firearms Training Event - Allen, TX</Text>
+      <Image source={require('../../assets/cowboystate.png')} style={styles.trainingLogo} resizeMode="contain" />
+      <Text style={styles.trainingTitle}>Security Training Resources</Text>
+      <Text style={styles.trainingSubtitle}>Find firearms and security training near you</Text>
       <Text style={styles.trainingDescription}>
-        Join USCCA for an interactive training session covering real-world self-defense scenarios and decision-making.
+        Browse nearby training locations, courses, and events to keep your security team prepared and certified.
       </Text>
       <View style={styles.trainingButton}>
-        <Text style={styles.trainingButtonText}>View Event Details</Text>
+        <Text style={styles.trainingButtonText}>Learn More</Text>
         <MaterialCommunityIcons name="open-in-new" size={16} color="#fff" />
       </View>
     </TouchableOpacity>
@@ -413,7 +413,7 @@ export const ResourcesScreen: React.FC<ResourcesScreenProps> = ({ navigation }) 
           <MaterialCommunityIcons name="book-open-variant" size={28} color={theme.colors.primary} />
           <Text style={styles.headerTitle}>Collaboration Information Hub</Text>
         </View>
-        <Image source={require('../../assets/uscca_logo.png')} style={styles.sponsorLogo} resizeMode="contain" />
+        <Image source={require('../../assets/cowboystate.png')} style={styles.sponsorLogo} resizeMode="contain" />
       </View>
 
       {/* Search Bar */}

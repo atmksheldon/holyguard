@@ -60,7 +60,7 @@ export const theme = {
   text: {
     header: {
       fontSize: 24,
-      fontWeight: 'bold',
+      fontWeight: '700' as const,
       color: '#2F2F2F',
     },
     subHeader: {

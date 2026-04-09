@@ -39,6 +39,8 @@ export const DashboardScreen = ({ navigation }: any) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showEmergencyBanner, setShowEmergencyBanner] = useState(false);
+  const [zoom, setZoom] = useState(0);
+  const lastPinchDistance = React.useRef<number | null>(null);
 
   useEffect(() => {
     AsyncStorage.getItem('emergencyBannerDismissed').then(val => {
@@ -75,8 +77,11 @@ export const DashboardScreen = ({ navigation }: any) => {
   useEffect(() => {
     logger.log('[Dashboard] Setting up alerts listener...');
     
+    if (!user?.organizationId) return;
+
     const alertsQuery = query(
       collection(db, 'alerts'),
+      where('organizationId', '==', user.organizationId),
       orderBy('timestamp', 'desc'),
       limit(20)
     );
@@ -128,7 +133,7 @@ export const DashboardScreen = ({ navigation }: any) => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user?.organizationId]);
 
   const handleDeleteAlert = async (alertId: string) => {
     try {
@@ -294,6 +299,7 @@ export const DashboardScreen = ({ navigation }: any) => {
             type: 'alert',
             alertLevel: alertLevel,
             location: user?.organizationId || 'Unknown Location',
+            organizationId: user?.organizationId || '',
             reporterId: user?.id || 'unknown',
             reporterName: user?.name || 'Unknown',
         };
@@ -372,29 +378,51 @@ export const DashboardScreen = ({ navigation }: any) => {
   if (isCameraVisible) {
       return (
           <View style={{ flex: 1 }}>
-             <CameraView 
-                style={StyleSheet.absoluteFill} 
+             <CameraView
+                style={StyleSheet.absoluteFill}
                 facing="back"
+                zoom={zoom}
                 ref={(ref) => setCameraRef(ref)}
              />
-             <View style={styles.cameraOverlay}>
+             <View
+               style={StyleSheet.absoluteFill}
+               onTouchStart={(e) => {
+                 if (e.nativeEvent.touches?.length === 2) {
+                   const [t1, t2] = [e.nativeEvent.touches[0], e.nativeEvent.touches[1]];
+                   lastPinchDistance.current = Math.hypot(t2.pageX - t1.pageX, t2.pageY - t1.pageY);
+                 }
+               }}
+               onTouchMove={(e) => {
+                 if (e.nativeEvent.touches?.length === 2 && lastPinchDistance.current) {
+                   const [t1, t2] = [e.nativeEvent.touches[0], e.nativeEvent.touches[1]];
+                   const dist = Math.hypot(t2.pageX - t1.pageX, t2.pageY - t1.pageY);
+                   const diff = (dist - lastPinchDistance.current) / 400;
+                   setZoom((prev) => Math.min(1, Math.max(0, prev + diff)));
+                   lastPinchDistance.current = dist;
+                 }
+               }}
+               onTouchEnd={() => { lastPinchDistance.current = null; }}
+             />
+             <View style={styles.cameraOverlay} pointerEvents="box-none">
                  <View style={styles.cameraTopSection}>
-                   <TouchableOpacity 
+                   <TouchableOpacity
                      style={styles.closeCamera}
                      onPress={() => {
                        setIsCameraVisible(false);
                        setPhotoLocation(null);
+                       setZoom(0);
                      }}
                    >
                      <MaterialCommunityIcons name="close" size={32} color={theme.colors.white} />
                    </TouchableOpacity>
-                   
+
                    <Text style={styles.cameraText}>ALIGN THREAT IN VIEW</Text>
-                   
-                   <TouchableOpacity 
+
+                   <TouchableOpacity
                      style={styles.choosePhotoOverlay}
                      onPress={() => {
                        setIsCameraVisible(false);
+                       setZoom(0);
                        handleChoosePhoto();
                      }}
                    >
@@ -402,8 +430,24 @@ export const DashboardScreen = ({ navigation }: any) => {
                      <Text style={styles.choosePhotoOverlayText}>Choose Existing Photo</Text>
                    </TouchableOpacity>
                  </View>
-                 
-                 <TouchableOpacity 
+
+                 <View style={styles.zoomControls}>
+                   <TouchableOpacity
+                     style={styles.zoomButton}
+                     onPress={() => setZoom((prev) => Math.min(1, prev + 0.1))}
+                   >
+                     <MaterialCommunityIcons name="plus" size={24} color={theme.colors.white} />
+                   </TouchableOpacity>
+                   <Text style={styles.zoomText}>{(zoom * 10).toFixed(0) === '0' ? '1' : (zoom * 10 + 1).toFixed(0)}x</Text>
+                   <TouchableOpacity
+                     style={styles.zoomButton}
+                     onPress={() => setZoom((prev) => Math.max(0, prev - 0.1))}
+                   >
+                     <MaterialCommunityIcons name="minus" size={24} color={theme.colors.white} />
+                   </TouchableOpacity>
+                 </View>
+
+                 <TouchableOpacity
                    style={styles.shutterButton}
                    onPress={takePicture}
                    activeOpacity={0.7}
@@ -426,7 +470,7 @@ export const DashboardScreen = ({ navigation }: any) => {
                 NETWORK: <Text style={styles.onlineStatus}>ONLINE</Text>
             </Text>
             <View style={styles.headerSponsorRow}>
-              <Image source={require('../../assets/uscca_logo.png')} style={styles.headerSponsorLogo} resizeMode="contain" />
+              <Image source={require('../../assets/cowboystate.png')} style={styles.headerSponsorLogo} resizeMode="contain" />
             </View>
         </View>
         <View style={styles.headerRight}>
@@ -554,7 +598,7 @@ export const DashboardScreen = ({ navigation }: any) => {
                     <View style={styles.sponsorFooter}>
                       <Text style={styles.sponsorText}>Security Network powered by</Text>
                       <View style={styles.sponsorFooterLogos}>
-                        <Image source={require('../../assets/uscca_logo.png')} style={styles.sponsorFooterLogo} resizeMode="contain" />
+                        <Image source={require('../../assets/cowboystate.png')} style={styles.sponsorFooterLogo} resizeMode="contain" />
                       </View>
                     </View>
                   }
@@ -821,6 +865,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  zoomControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    gap: 16,
+  },
+  zoomButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  zoomText: {
+    color: theme.colors.white,
+    fontSize: 16,
+    fontWeight: 'bold',
+    minWidth: 30,
+    textAlign: 'center',
   },
   shutterButton: {
     width: 90,

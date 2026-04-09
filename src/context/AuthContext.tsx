@@ -6,6 +6,7 @@ import { auth, db } from '../config/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Purchases from 'react-native-purchases';
 
 interface AuthContextData {
     user: UserProfile | null;
@@ -50,6 +51,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Listen for auth changes
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
+                // Identify user in RevenueCat so purchases are tied to their account
+                try {
+                    await Purchases.logIn(firebaseUser.uid);
+                } catch (e) {
+                    logger.error('RevenueCat login error:', e);
+                }
                 await fetchUserProfile(firebaseUser.uid);
             } else {
                 setUser(null);
@@ -76,9 +83,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const userData = userDoc.data();
             const orgId = userData.organizationId || userData.organization_id || 'default-org';
 
-            // Fetch organization status
+            // Fetch organization status and subscription info
             let orgStatus: 'pending' | 'verified' | 'rejected' = 'verified';
             let orgName = '';
+            let subscriptionPlan: UserProfile['subscriptionPlan'] = undefined;
+            let subscriptionStatus: UserProfile['subscriptionStatus'] = undefined;
+            let maxSeats: number | undefined = undefined;
 
             if (orgId && orgId !== 'default-org') {
                 // Try to find org by querying the id field (existing pattern)
@@ -88,6 +98,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     const orgData = orgSnapshot.docs[0].data();
                     orgStatus = mapOrgStatus(orgData.status);
                     orgName = orgData.name || '';
+                    subscriptionPlan = orgData.subscriptionPlan || undefined;
+                    subscriptionStatus = orgData.subscriptionStatus || undefined;
+                    maxSeats = orgData.maxSeats || undefined;
+
+                    // Grandfathered orgs bypass subscription entirely
+                    if (orgData.grandfathered === true) {
+                        subscriptionStatus = undefined;
+                        subscriptionPlan = undefined;
+                    } else if (orgStatus === 'verified' && subscriptionStatus === 'expired') {
+                        // Keep expired status — they had a plan that lapsed
+                    } else if (orgStatus === 'verified' && subscriptionStatus === 'cancelled') {
+                        // Keep cancelled status
+                    }
                 }
             }
 
@@ -99,6 +122,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 emailVerified: auth.currentUser?.emailVerified || false,
                 organizationStatus: orgStatus,
                 organizationName: orgName,
+                tosAcceptedAt: userData.tosAcceptedAt || userData.tos_accepted_at || undefined,
+                subscriptionPlan,
+                subscriptionStatus,
+                maxSeats,
             };
 
             setUser(profile);

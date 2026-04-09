@@ -88,7 +88,26 @@ exports.validateInviteCode = functions.https.onRequest(async (req, res) => {
     // Get organization details
     const orgDoc = await db.collection('organizations').doc(codeData.organizationId).get();
     const orgName = orgDoc.exists ? orgDoc.data().name : 'Unknown Organization';
-    
+
+    // Check seat limit
+    if (orgDoc.exists) {
+      const orgData = orgDoc.data();
+      const maxSeats = orgData.maxSeats || 0;
+      if (maxSeats > 0) {
+        const membersSnapshot = await db.collection('users')
+          .where('organization_id', '==', codeData.organizationId)
+          .get();
+        const currentMembers = membersSnapshot.size;
+        if (currentMembers >= maxSeats) {
+          res.status(200).json({
+            valid: false,
+            error: `This organization has reached its seat limit (${maxSeats}). Contact the admin to upgrade the plan.`,
+          });
+          return;
+        }
+      }
+    }
+
     // Increment usage count
     await codesRef.doc(codeDoc.id).update({
       usedCount: admin.firestore.FieldValue.increment(1)
@@ -846,3 +865,4 @@ exports.reviewOrganization = functions.https.onRequest(async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+

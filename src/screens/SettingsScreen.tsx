@@ -16,7 +16,7 @@ interface SettingsScreenProps {
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshProfile } = useAuth();
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -36,6 +36,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [demoPassword, setDemoPassword] = useState('');
   const [demoError, setDemoError] = useState('');
+  const [secretMode, setSecretMode] = useState<'menu' | 'demo' | 'redeem'>('menu');
+  const [redeemLoading, setRedeemLoading] = useState(false);
   const tapCountRef = useRef(0);
   const lastTapTimeRef = useRef(0);
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -52,9 +54,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
     if (tapCountRef.current >= 3) {
       tapCountRef.current = 0;
       setShowDemoModal(true);
+      setSecretMode('menu');
       setDemoPassword('');
       setDemoError('');
     }
+  };
+
+  const shakeInput = () => {
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+    ]).start();
   };
 
   const handleDemoSubmit = () => {
@@ -66,13 +78,77 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
     } else {
       setDemoError('Invalid code');
       setDemoPassword('');
-      // Shake animation
-      Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
-      ]).start();
+      shakeInput();
+    }
+  };
+
+  const handleRedeemSubmit = async () => {
+    const code = demoPassword.trim().toUpperCase();
+    if (!code) {
+      setDemoError('Enter a key');
+      return;
+    }
+
+    if (!user?.organizationId || user.organizationId === 'default-org') {
+      setDemoError('No organization found');
+      return;
+    }
+
+    setRedeemLoading(true);
+    try {
+      // Look up the key in Firestore
+      const keysQuery = query(collection(db, 'redemption_keys'), where('code', '==', code));
+      const keySnapshot = await getDocs(keysQuery);
+
+      if (keySnapshot.empty) {
+        setDemoError('Invalid key');
+        setDemoPassword('');
+        shakeInput();
+        setRedeemLoading(false);
+        return;
+      }
+
+      const keyDoc = keySnapshot.docs[0];
+      const keyData = keyDoc.data();
+
+      if (keyData.used) {
+        setDemoError('This key has already been redeemed');
+        setDemoPassword('');
+        shakeInput();
+        setRedeemLoading(false);
+        return;
+      }
+
+      // Mark key as used
+      await updateDoc(keyDoc.ref, {
+        used: true,
+        redeemedBy: user.id,
+        redeemedByName: user.name,
+        redeemedForOrg: user.organizationId,
+        redeemedAt: new Date().toISOString(),
+      });
+
+      // Set grandfathered on the org
+      const orgsQuery = query(collection(db, 'organizations'), where('id', '==', user.organizationId));
+      const orgSnapshot = await getDocs(orgsQuery);
+
+      if (orgSnapshot.empty) {
+        const orgRef = doc(db, 'organizations', user.organizationId);
+        await updateDoc(orgRef, { grandfathered: true });
+      } else {
+        await updateDoc(orgSnapshot.docs[0].ref, { grandfathered: true });
+      }
+
+      await refreshProfile();
+      setShowDemoModal(false);
+      setDemoPassword('');
+      setDemoError('');
+      Alert.alert('Success', 'Key redeemed successfully.');
+    } catch (error: any) {
+      logger.error('Redeem error:', error);
+      setDemoError('Failed to redeem key');
+    } finally {
+      setRedeemLoading(false);
     }
   };
 
@@ -433,6 +509,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
                 <MaterialCommunityIcons name="map-marker-edit" size={20} color={theme.colors.primary} />
                 <Text style={styles.updateOrgButtonText}>Update Organization</Text>
               </TouchableOpacity>
+              {(user?.role === 'admin' || user?.role === 'super_admin') && (
+                <TouchableOpacity
+                  style={styles.updateOrgButton}
+                  onPress={() => navigation.navigate('SeatManagement')}
+                >
+                  <MaterialCommunityIcons name="account-group" size={20} color={theme.colors.primary} />
+                  <Text style={styles.updateOrgButtonText}>Manage Seats</Text>
+                </TouchableOpacity>
+              )}
             </View>
           ) : (
             <ActivityIndicator size="small" color={theme.colors.primary} />
@@ -450,9 +535,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
             <Text style={styles.appVersion}>Version 1.0.0</Text>
             
             <View style={styles.sponsorSection}>
-              <Text style={styles.sponsorLabel}>Sponsored By</Text>
+              <Text style={styles.sponsorLabel}>Developed By</Text>
               <View style={styles.sponsorLogosLarge}>
-                <Image source={require('../../assets/uscca_logo.png')} style={styles.sponsorLogoLarge} resizeMode="contain" />
+                <Image source={require('../../assets/cowboystate.png')} style={styles.sponsorLogoLarge} resizeMode="contain" />
               </View>
               <Text style={styles.sponsorDescription}>
                 Providing secure communication and alert systems for communities and organizations.
@@ -471,7 +556,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Demo Access Modal */}
+      {/* Secret Access Modal */}
       <Modal
         visible={showDemoModal}
         animationType="fade"
@@ -480,38 +565,71 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
       >
         <View style={styles.demoOverlay}>
           <Animated.View style={[styles.demoModalBox, { transform: [{ translateX: shakeAnim }] }]}>
-            <Text style={styles.demoModalTitle}>Enter Access Code</Text>
-            <TextInput
-              style={styles.demoModalInput}
-              value={demoPassword}
-              onChangeText={(text) => {
-                setDemoPassword(text);
-                setDemoError('');
-              }}
-              placeholder="Access code"
-              placeholderTextColor="#999"
-              secureTextEntry
-              autoCapitalize="none"
-              autoFocus
-              onSubmitEditing={handleDemoSubmit}
-            />
-            {demoError !== '' && (
-              <Text style={styles.demoErrorText}>{demoError}</Text>
+            {secretMode === 'menu' ? (
+              <>
+                <Text style={styles.demoModalTitle}>Admin Access</Text>
+                <TouchableOpacity
+                  style={styles.secretMenuButton}
+                  onPress={() => { setSecretMode('demo'); setDemoPassword(''); setDemoError(''); }}
+                >
+                  <MaterialCommunityIcons name="monitor-eye" size={20} color={theme.colors.primary} />
+                  <Text style={styles.secretMenuButtonText}>Demo Mode</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.secretMenuButton}
+                  onPress={() => { setSecretMode('redeem'); setDemoPassword(''); setDemoError(''); }}
+                >
+                  <MaterialCommunityIcons name="key-variant" size={20} color={theme.colors.primary} />
+                  <Text style={styles.secretMenuButtonText}>Redeem Key</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.demoCancelButton, { marginTop: 16 }]}
+                  onPress={() => setShowDemoModal(false)}
+                >
+                  <Text style={styles.demoCancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.demoModalTitle}>
+                  {secretMode === 'demo' ? 'Enter Access Code' : 'Enter Redemption Key'}
+                </Text>
+                <TextInput
+                  style={styles.demoModalInput}
+                  value={demoPassword}
+                  onChangeText={(text) => {
+                    setDemoPassword(text);
+                    setDemoError('');
+                  }}
+                  placeholder={secretMode === 'demo' ? 'Access code' : 'Redemption key'}
+                  placeholderTextColor="#999"
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoFocus
+                  onSubmitEditing={secretMode === 'demo' ? handleDemoSubmit : handleRedeemSubmit}
+                />
+                {demoError !== '' && (
+                  <Text style={styles.demoErrorText}>{demoError}</Text>
+                )}
+                <View style={styles.demoModalButtons}>
+                  <TouchableOpacity
+                    style={styles.demoCancelButton}
+                    onPress={() => setSecretMode('menu')}
+                  >
+                    <Text style={styles.demoCancelText}>Back</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.demoSubmitButton, redeemLoading && { opacity: 0.5 }]}
+                    onPress={secretMode === 'demo' ? handleDemoSubmit : handleRedeemSubmit}
+                    disabled={redeemLoading}
+                  >
+                    <Text style={styles.demoSubmitText}>
+                      {redeemLoading ? 'Redeeming...' : 'Submit'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
             )}
-            <View style={styles.demoModalButtons}>
-              <TouchableOpacity
-                style={styles.demoCancelButton}
-                onPress={() => setShowDemoModal(false)}
-              >
-                <Text style={styles.demoCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.demoSubmitButton}
-                onPress={handleDemoSubmit}
-              >
-                <Text style={styles.demoSubmitText}>Submit</Text>
-              </TouchableOpacity>
-            </View>
           </Animated.View>
         </View>
       </Modal>
@@ -1042,5 +1160,19 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 15,
+  },
+  secretMenuButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  secretMenuButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: theme.colors.textPrimary,
+    marginLeft: 12,
   },
 });

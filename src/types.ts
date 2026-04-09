@@ -40,6 +40,9 @@ export interface WatchlistEntry {
     notes?: string;
 }
 
+export type SubscriptionPlan = 'individual' | 'team' | 'enterprise';
+export type SubscriptionStatus = 'active' | 'expired' | 'cancelled';
+
 export interface UserProfile {
     id: string;
     name: string;
@@ -48,6 +51,10 @@ export interface UserProfile {
     emailVerified: boolean;
     organizationStatus?: 'pending' | 'verified' | 'rejected';
     organizationName?: string;
+    tosAcceptedAt?: string;
+    subscriptionPlan?: SubscriptionPlan;
+    subscriptionStatus?: SubscriptionStatus;
+    maxSeats?: number;
 }
 
 export interface VerificationCheck {

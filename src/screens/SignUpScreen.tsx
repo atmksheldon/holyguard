@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Linking } from 'react-native';
 import { logger } from '../utils/logger';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -35,6 +35,7 @@ export const SignUpScreen = ({ navigation }: any) => {
     const [validatedOrgId, setValidatedOrgId] = useState<string>('');
     const [validatedOrgName, setValidatedOrgName] = useState<string>('');
     const placesRef = useRef<any>(null);
+    const [tosAccepted, setTosAccepted] = useState(false);
 
     // New verification fields
     const [ein, setEin] = useState('');
@@ -82,6 +83,11 @@ export const SignUpScreen = ({ navigation }: any) => {
         const passwordValidation = validatePassword(password);
         if (!passwordValidation.valid) {
             Alert.alert("Weak Password", passwordValidation.error || 'Please use a stronger password');
+            return;
+        }
+
+        if (!tosAccepted) {
+            Alert.alert("Terms Required", "You must agree to the Terms of Service and Privacy Policy to continue.");
             return;
         }
 
@@ -133,6 +139,7 @@ export const SignUpScreen = ({ navigation }: any) => {
                     organization_id: { stringValue: validatedOrgId },
                     email_verified: { booleanValue: false },
                     created_at: { timestampValue: new Date().toISOString() },
+                    tos_accepted_at: { timestampValue: new Date().toISOString() },
                 }
             };
 
@@ -225,6 +232,7 @@ export const SignUpScreen = ({ navigation }: any) => {
                     organization_id: { stringValue: orgId },
                     email_verified: { booleanValue: false },
                     created_at: { timestampValue: new Date().toISOString() },
+                    tos_accepted_at: { timestampValue: new Date().toISOString() },
                 }
             };
 
@@ -360,9 +368,37 @@ export const SignUpScreen = ({ navigation }: any) => {
                     />
 
                     <TouchableOpacity
-                        style={styles.button}
+                        style={styles.tosRow}
+                        onPress={() => setTosAccepted(!tosAccepted)}
+                        activeOpacity={0.7}
+                    >
+                        <View style={[styles.checkbox, tosAccepted && styles.checkboxChecked]}>
+                            {tosAccepted && (
+                                <MaterialCommunityIcons name="check" size={16} color={theme.colors.white} />
+                            )}
+                        </View>
+                        <Text style={styles.tosText}>
+                            I agree to the{' '}
+                            <Text
+                                style={styles.tosLink}
+                                onPress={() => Linking.openURL('https://atmksheldon.github.io/holyguard/terms.html')}
+                            >
+                                Terms of Service
+                            </Text>
+                            {' '}and{' '}
+                            <Text
+                                style={styles.tosLink}
+                                onPress={() => Linking.openURL('https://atmksheldon.github.io/holyguard/privacy.html')}
+                            >
+                                Privacy Policy
+                            </Text>
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.button, !tosAccepted && styles.buttonDisabled]}
                         onPress={handleStep1Next}
-                        disabled={loading}
+                        disabled={loading || !tosAccepted}
                     >
                         {loading ? (
                             <ActivityIndicator color={theme.colors.white} />
@@ -879,5 +915,40 @@ const styles = StyleSheet.create({
         marginTop: 20,
         lineHeight: 18,
         fontStyle: 'italic',
+    },
+    tosRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginTop: 8,
+        marginBottom: 4,
+    },
+    checkbox: {
+        width: 24,
+        height: 24,
+        borderRadius: 4,
+        borderWidth: 2,
+        borderColor: theme.colors.surfaceDark,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 10,
+        marginTop: 1,
+    },
+    checkboxChecked: {
+        backgroundColor: theme.colors.primary,
+        borderColor: theme.colors.primary,
+    },
+    tosText: {
+        flex: 1,
+        fontSize: 14,
+        color: theme.colors.textSecondary,
+        lineHeight: 20,
+    },
+    tosLink: {
+        color: theme.colors.primary,
+        fontWeight: 'bold',
+        textDecorationLine: 'underline',
+    },
+    buttonDisabled: {
+        opacity: 0.5,
     },
 });

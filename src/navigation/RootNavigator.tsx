@@ -8,6 +8,9 @@ import { SignUpScreen } from '../screens/SignUpScreen';
 import { VerifyEmailScreen } from '../screens/VerifyEmailScreen';
 import { PendingApprovalScreen } from '../screens/PendingApprovalScreen';
 import { RejectedScreen } from '../screens/RejectedScreen';
+import { TosAcceptanceScreen } from '../screens/TosAcceptanceScreen';
+import { PaywallScreen } from '../screens/PaywallScreen';
+import { SubscriptionExpiredScreen } from '../screens/SubscriptionExpiredScreen';
 import { useAuth } from '../context/AuthContext';
 import { theme } from '../theme';
 
@@ -37,10 +40,19 @@ export const RootNavigator = () => {
             {user ? (
                 !user.emailVerified ? (
                     <VerifyEmailScreen />
+                ) : !user.tosAcceptedAt ? (
+                    <TosAcceptanceScreen />
                 ) : user.organizationStatus === 'pending' ? (
                     <PendingApprovalScreen />
                 ) : user.organizationStatus === 'rejected' ? (
                     <RejectedScreen />
+                ) : user.subscriptionStatus === 'expired' || user.subscriptionStatus === 'cancelled' ? (
+                    // Admins see the paywall to subscribe; members see an info screen
+                    user.role === 'admin' || user.role === 'super_admin' ? (
+                        <PaywallScreen />
+                    ) : (
+                        <SubscriptionExpiredScreen />
+                    )
                 ) : (
                     <AppNavigator />
                 )
